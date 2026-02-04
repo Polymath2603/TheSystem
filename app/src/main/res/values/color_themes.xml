@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Blue Theme -->
+    <style name="ThemeBlue" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#2196F3</item>
+        <item name="colorSecondary">#03DAC6</item>
+        <item name="android:colorBackground">#121212</item>
+        <item name="colorSurface">#121212</item>
+        <item name="colorError">#CF6679</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="colorOnBackground">#FFFFFF</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+    </style>
+
+    <!-- Red Theme -->
+    <style name="ThemeRed" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#F44336</item>
+        <item name="colorSecondary">#FF6E40</item>
+        <item name="android:colorBackground">#121212</item>
+        <item name="colorSurface">#121212</item>
+        <item name="colorError">#CF6679</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="colorOnBackground">#FFFFFF</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+    </style>
+
+    <!-- Green Theme -->
+    <style name="ThemeGreen" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#4CAF50</item>
+        <item name="colorSecondary">#81C784</item>
+        <item name="android:colorBackground">#121212</item>
+        <item name="colorSurface">#121212</item>
+        <item name="colorError">#CF6679</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="colorOnBackground">#FFFFFF</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+    </style>
+
+    <!-- Yellow Theme -->
+    <style name="ThemeYellow" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#FFEB3B</item>
+        <item name="colorSecondary">#FFD54F</item>
+        <item name="android:colorBackground">#121212</item>
+        <item name="colorSurface">#121212</item>
+        <item name="colorError">#CF6679</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="colorOnBackground">#FFFFFF</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+    </style>
+
+    <!-- Purple Theme -->
+    <style name="ThemePurple" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#9C27B0</item>
+        <item name="colorSecondary">#CE93D8</item>
+        <item name="android:colorBackground">#121212</item>
+        <item name="colorSurface">#121212</item>
+        <item name="colorError">#CF6679</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="colorOnBackground">#FFFFFF</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+    </style>
+
+    <!-- Cyan Theme -->
+    <style name="ThemeCyan" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#00BCD4</item>
+        <item name="colorSecondary">#4DD0E1</item>
+        <item name="android:colorBackground">#121212</item>
+        <item name="colorSurface">#121212</item>
+        <item name="colorError">#CF6679</item>
+        <item name="colorOnPrimary">#000000</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="colorOnBackground">#FFFFFF</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+    </style>
+
+    <!-- Grey Theme -->
+    <style name="ThemeGrey" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">#9E9E9E</item>
+        <item name="colorSecondary">#BDBDBD</item>
+        <item name="android:colorBackground">#121212</item>
+        <item name="colorSurface">#121212</item>
+        <item name="colorError">#CF6679</item>
+        <item name="colorOnPrimary">#FFFFFF</item>
+        <item name="colorOnSecondary">#000000</item>
+        <item name="colorOnBackground">#FFFFFF</item>
+        <item name="colorOnSurface">#FFFFFF</item>
+    </style>
+</resources>
