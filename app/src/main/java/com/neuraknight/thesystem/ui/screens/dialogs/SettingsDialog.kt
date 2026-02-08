@@ -77,8 +77,16 @@ class SettingsDialog(
             val showHabits = showHabitsCheckBox.isChecked
             val showCustom = showCustomCheckBox.isChecked
 
+            val oldColor = viewModel.appData.settings.color
             viewModel.saveSettings(name, color, showHabits, showCustom)
-            dismiss()
+            
+            // Apply theme change instantly by recreating activity
+            if (color != oldColor) {
+                dismiss()
+                (context as? android.app.Activity)?.recreate()
+            } else {
+                dismiss()
+            }
         }
 
         cancelButton.setOnClickListener {

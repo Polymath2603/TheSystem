@@ -5,12 +5,17 @@
         <item name="colorPrimary">#2196F3</item>
         <item name="colorSecondary">#03DAC6</item>
         <item name="android:colorBackground">#121212</item>
-        <item name="colorSurface">#121212</item>
+        <item name="android:windowBackground">#121212</item>
+        <item name="colorSurface">#1E1E1E</item>
         <item name="colorError">#CF6679</item>
         <item name="colorOnPrimary">#000000</item>
         <item name="colorOnSecondary">#000000</item>
         <item name="colorOnBackground">#FFFFFF</item>
         <item name="colorOnSurface">#FFFFFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#B3B3B3</item>
+        <item name="android:textColorPrimaryInverse">#FFFFFF</item>
+        <item name="android:textColorSecondaryInverse">#DDDDDD</item>
     </style>
 
     <!-- Red Theme -->
@@ -18,12 +23,17 @@
         <item name="colorPrimary">#F44336</item>
         <item name="colorSecondary">#FF6E40</item>
         <item name="android:colorBackground">#121212</item>
-        <item name="colorSurface">#121212</item>
+        <item name="android:windowBackground">#121212</item>
+        <item name="colorSurface">#1E1E1E</item>
         <item name="colorError">#CF6679</item>
         <item name="colorOnPrimary">#FFFFFF</item>
         <item name="colorOnSecondary">#000000</item>
         <item name="colorOnBackground">#FFFFFF</item>
         <item name="colorOnSurface">#FFFFFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#B3B3B3</item>
+        <item name="android:textColorPrimaryInverse">#FFFFFF</item>
+        <item name="android:textColorSecondaryInverse">#DDDDDD</item>
     </style>
 
     <!-- Green Theme -->
@@ -31,12 +41,17 @@
         <item name="colorPrimary">#4CAF50</item>
         <item name="colorSecondary">#81C784</item>
         <item name="android:colorBackground">#121212</item>
-        <item name="colorSurface">#121212</item>
+        <item name="android:windowBackground">#121212</item>
+        <item name="colorSurface">#1E1E1E</item>
         <item name="colorError">#CF6679</item>
         <item name="colorOnPrimary">#000000</item>
         <item name="colorOnSecondary">#000000</item>
         <item name="colorOnBackground">#FFFFFF</item>
         <item name="colorOnSurface">#FFFFFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#B3B3B3</item>
+        <item name="android:textColorPrimaryInverse">#FFFFFF</item>
+        <item name="android:textColorSecondaryInverse">#DDDDDD</item>
     </style>
 
     <!-- Yellow Theme -->
@@ -44,12 +59,17 @@
         <item name="colorPrimary">#FFEB3B</item>
         <item name="colorSecondary">#FFD54F</item>
         <item name="android:colorBackground">#121212</item>
-        <item name="colorSurface">#121212</item>
+        <item name="android:windowBackground">#121212</item>
+        <item name="colorSurface">#1E1E1E</item>
         <item name="colorError">#CF6679</item>
         <item name="colorOnPrimary">#000000</item>
         <item name="colorOnSecondary">#000000</item>
         <item name="colorOnBackground">#FFFFFF</item>
         <item name="colorOnSurface">#FFFFFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#B3B3B3</item>
+        <item name="android:textColorPrimaryInverse">#000000</item>
+        <item name="android:textColorSecondaryInverse">#333333</item>
     </style>
 
     <!-- Purple Theme -->
@@ -57,12 +77,17 @@
         <item name="colorPrimary">#9C27B0</item>
         <item name="colorSecondary">#CE93D8</item>
         <item name="android:colorBackground">#121212</item>
-        <item name="colorSurface">#121212</item>
+        <item name="android:windowBackground">#121212</item>
+        <item name="colorSurface">#1E1E1E</item>
         <item name="colorError">#CF6679</item>
         <item name="colorOnPrimary">#FFFFFF</item>
         <item name="colorOnSecondary">#000000</item>
         <item name="colorOnBackground">#FFFFFF</item>
         <item name="colorOnSurface">#FFFFFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#B3B3B3</item>
+        <item name="android:textColorPrimaryInverse">#FFFFFF</item>
+        <item name="android:textColorSecondaryInverse">#DDDDDD</item>
     </style>
 
     <!-- Cyan Theme -->
@@ -70,12 +95,17 @@
         <item name="colorPrimary">#00BCD4</item>
         <item name="colorSecondary">#4DD0E1</item>
         <item name="android:colorBackground">#121212</item>
-        <item name="colorSurface">#121212</item>
+        <item name="android:windowBackground">#121212</item>
+        <item name="colorSurface">#1E1E1E</item>
         <item name="colorError">#CF6679</item>
         <item name="colorOnPrimary">#000000</item>
         <item name="colorOnSecondary">#000000</item>
         <item name="colorOnBackground">#FFFFFF</item>
         <item name="colorOnSurface">#FFFFFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#B3B3B3</item>
+        <item name="android:textColorPrimaryInverse">#FFFFFF</item>
+        <item name="android:textColorSecondaryInverse">#DDDDDD</item>
     </style>
 
     <!-- Grey Theme -->
@@ -83,11 +113,16 @@
         <item name="colorPrimary">#9E9E9E</item>
         <item name="colorSecondary">#BDBDBD</item>
         <item name="android:colorBackground">#121212</item>
-        <item name="colorSurface">#121212</item>
+        <item name="android:windowBackground">#121212</item>
+        <item name="colorSurface">#1E1E1E</item>
         <item name="colorError">#CF6679</item>
         <item name="colorOnPrimary">#FFFFFF</item>
         <item name="colorOnSecondary">#000000</item>
         <item name="colorOnBackground">#FFFFFF</item>
         <item name="colorOnSurface">#FFFFFF</item>
+        <item name="android:textColorPrimary">#FFFFFF</item>
+        <item name="android:textColorSecondary">#B3B3B3</item>
+        <item name="android:textColorPrimaryInverse">#FFFFFF</item>
+        <item name="android:textColorSecondaryInverse">#DDDDDD</item>
     </style>
 </resources>
