@@ -153,3 +153,53 @@ git commit -m "fix: all UI issues - checkboxes, profile on main, themes, instant
 ## 📱 READY TO USE
 
 Extract, build, and run. Everything is fixed and working!
+
+---
+
+## Support This Project
+
+If you find this useful, consider supporting:
+
+### 💰 Cryptocurrency
+
+<img src="https://img.shields.io/badge/Bitcoin-000000?style=for-the-badge&logo=bitcoin&logoColor=white" alt="Bitcoin"/>
+
+```
+15kPSKNLEgVH6Jy3RtNaT2mPsxTMS6MAEp
+```
+
+<img src="https://img.shields.io/badge/Ethereum-3C3C3D?style=for-the-badge&logo=ethereum&logoColor=white" alt="Ethereum"/>
+
+```
+0xc4f7076dd25a38f2256b5c23b8ca859cc42924cf
+```
+
+<img src="https://img.shields.io/badge/BNB-F3BA2F?style=for-the-badge&logo=binance&logoColor=white" alt="BNB"/>
+
+```
+0xc4f7076dd25a38f2256b5c23b8ca859cc42924cf
+```
+
+<img src="https://img.shields.io/badge/Solana-9945FF?style=for-the-badge&logo=solana&logoColor=white" alt="Solana"/>
+
+```
+EWcxGVtbohy8CdFLb2HNUqSHdecRiWKLywgMLwsXByhn
+```
+
+### 🏦 Exchange Platforms
+
+<img src="https://img.shields.io/badge/Binance-FCD535?style=for-the-badge&logo=binance&logoColor=white" alt="Binance"/>
+
+- **URL:** https://app.binance.com/uni-qr/Uzof5Lrq
+- **ID:** `1011264323`
+
+<img src="https://img.shields.io/badge/Bybit-F7A600?style=for-the-badge&logo=bybit&logoColor=white" alt="Bybit"/>
+
+- **URL:** https://i.bybit.com/W2abUWF
+- **ID:** `467077834`
+
+### 💳 Traditional
+
+<img src="https://img.shields.io/badge/PayPal-00457C?style=for-the-badge&logo=paypal&logoColor=white" alt="PayPal"/>
+
+https://www.paypal.com/ncp/payment/W78F6W4TXZ4CS
