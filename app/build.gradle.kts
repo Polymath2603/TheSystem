@@ -6,12 +6,12 @@ plugins {
 
 android {
     namespace = "com.neuraknight.thesystem"
-    compileSdk = 33
+    compileSdk = 34
 
     defaultConfig {
         applicationId = "com.neuraknight.thesystem"
         minSdk = 24
-        targetSdk = 33
+        targetSdk = 34
         versionCode = 1
         versionName = "1.0"
 
@@ -61,6 +61,7 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.material)
     implementation(libs.androidx.fragment.ktx)
+    implementation("com.google.code.gson:gson:2.10.1")
     
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -55,7 +55,9 @@ data class User(
     var xpProgress: Double = 0.0,
     var xpNeeded: Double = 1.0,
     var type: String = "Knight",
-    var `class`: String = "F",
+    var characterClass: String = "F",
+    var rank: String = "Bronze", // Added rank field
+    var currentTitle: String = "Newbie", // Added currentTitle field
     var streak: Int = 0,
     var passcards: Int = 0,
     var profileImg: String = ""

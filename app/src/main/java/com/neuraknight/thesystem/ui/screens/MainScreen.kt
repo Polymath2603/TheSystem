@@ -77,7 +77,7 @@ fun UserInfoHeader(user: User) {
         Spacer(modifier = Modifier.width(16.dp))
         Column {
             Text(user.name, fontWeight = FontWeight.Bold)
-            Text("Lv: ${user.level} | Class: ${user.`class`}")
+            Text("Lv: ${user.level} | Class: ${user.characterClass}")
             Text("Type: ${user.type}")
         }
     }
