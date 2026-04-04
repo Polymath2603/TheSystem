@@ -80,10 +80,16 @@ class WorkoutFragment : Fragment() {
 
         // Observe quest changes
         lifecycleScope.launch {
+            var lastQuestHash = viewModel.appData.quest.hashCode()
             while (true) {
                 passCardButton.visibility = if (viewModel.appData.user.passcards > 0 && !viewModel.appData.quest.completed) View.VISIBLE else View.GONE
                 resetNowButton.visibility = if (viewModel.appData.quest.completed) View.VISIBLE else View.GONE
-                exerciseAdapter.notifyDataSetChanged()
+                
+                val currentQuestHash = viewModel.appData.quest.hashCode()
+                if (currentQuestHash != lastQuestHash) {
+                    exerciseAdapter.notifyDataSetChanged()
+                    lastQuestHash = currentQuestHash
+                }
                 delay(100)
             }
         }

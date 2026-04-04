@@ -71,9 +71,12 @@ class HabitAdapter(private val context: Context, private val viewModel: MainView
         val name = view.findViewById<TextView>(R.id.habitName)
 
         name.text = habit.name
+        checkbox.setOnCheckedChangeListener(null)
         checkbox.isChecked = habit.done
         checkbox.setOnCheckedChangeListener { _, isChecked ->
-            viewModel.toggleHabitDone(position, isChecked)
+            if (isChecked != habit.done) {
+                viewModel.toggleHabitDone(position, isChecked)
+            }
         }
 
         return view
@@ -96,9 +99,12 @@ class CustomTaskAdapter(private val context: Context, private val viewModel: Mai
         val deleteButton = view.findViewById<Button>(R.id.deleteTaskButton)
 
         name.text = task.name
+        checkbox.setOnCheckedChangeListener(null)
         checkbox.isChecked = task.done
         checkbox.setOnCheckedChangeListener { _, isChecked ->
-            viewModel.toggleCustomTaskDone(position, isChecked)
+            if (isChecked != task.done) {
+                viewModel.toggleCustomTaskDone(position, isChecked)
+            }
         }
         deleteButton.setOnClickListener {
             viewModel.deleteCustomTask(position)
