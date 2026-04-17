@@ -18,6 +18,7 @@ import androidx.compose.ui.Modifier
 fun DropdownSelector(
     label: String,
     options: List<String>,
+    labels: List<String>? = null,
     selected: String,
     onSelected: (String) -> Unit
 ) {
@@ -28,7 +29,8 @@ fun DropdownSelector(
         onExpandedChange = { expanded = !expanded }
     ) {
         OutlinedTextField(
-            value = selected.replaceFirstChar { it.uppercase() },
+            value = labels?.getOrNull(options.indexOf(selected))?.replaceFirstChar { it.uppercase() } 
+                    ?: selected.replaceFirstChar { it.uppercase() },
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
@@ -39,9 +41,10 @@ fun DropdownSelector(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
-            options.forEach { option ->
+            options.forEachIndexed { index, option ->
                 DropdownMenuItem(
-                    text = { Text(option.replaceFirstChar { it.uppercase() }) },
+                    text = { Text(labels?.getOrNull(index)?.replaceFirstChar { it.uppercase() } 
+                        ?: option.replaceFirstChar { it.uppercase() }) },
                     onClick = {
                         onSelected(option)
                         expanded = false

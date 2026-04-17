@@ -4,37 +4,85 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.ui.graphics.Color
 
 val BlueColorScheme = darkColorScheme(
-    primary = Color(0xFF3EB5D0),
-    secondary = Color(0xFF3A69BD),
-    background = Color(0xFF000933),
-    surface = Color(0xFF000933),
+    primary = SystemBlueElectric,
+    secondary = SystemBlueDeep,
+    background = DarkBackground,
+    surface = DarkSurface,
     onPrimary = Color.Black,
     onSecondary = Color.White,
-    onBackground = Color(0xFFEEEEEE),
-    onSurface = Color(0xFFEEEEEE),
-    surfaceVariant = Color(0xFF000C4D)
+    onBackground = TextPrimary,
+    onSurface = TextPrimary,
+    surfaceVariant = DarkSurfaceVariant
 )
 
 val RedColorScheme = darkColorScheme(
-    primary = Color(0xFFD03E3E),
-    secondary = Color(0xFFBD3A3A),
-    background = Color(0xFF330000),
-    surface = Color(0xFF330000),
-    onPrimary = Color.Black,
+    primary = SystemRedNeon,
+    secondary = Color(0xFFFF5252),
+    background = DarkBackground,
+    surface = DarkSurface,
+    onPrimary = Color.White,
     onSecondary = Color.White,
-    onBackground = Color(0xFFEEEEEE),
-    onSurface = Color(0xFFEEEEEE),
-    surfaceVariant = Color(0xFF4D0000)
+    onBackground = TextPrimary,
+    onSurface = TextPrimary,
+    surfaceVariant = DarkSurfaceVariant
 )
 
 val GreenColorScheme = darkColorScheme(
-    primary = Color(0xFF3ED03E),
-    secondary = Color(0xFF3ABD3A),
-    background = Color(0xFF003300),
-    surface = Color(0xFF003300),
+    primary = SystemGreenNeon,
+    secondary = Color(0xFF69F0AE),
+    background = DarkBackground,
+    surface = DarkSurface,
     onPrimary = Color.Black,
+    onSecondary = Color.Black,
+    onBackground = TextPrimary,
+    onSurface = TextPrimary,
+    surfaceVariant = DarkSurfaceVariant
+)
+
+val YellowColorScheme = darkColorScheme(
+    primary = SystemYellowNeon,
+    secondary = Color(0xFFFFFF00),
+    background = DarkBackground,
+    surface = DarkSurface,
+    onPrimary = Color.Black,
+    onSecondary = Color.Black,
+    onBackground = TextPrimary,
+    onSurface = TextPrimary,
+    surfaceVariant = DarkSurfaceVariant
+)
+
+val PurpleColorScheme = darkColorScheme(
+    primary = SystemPurpleNeon,
+    secondary = Color(0xFFE040FB),
+    background = DarkBackground,
+    surface = DarkSurface,
+    onPrimary = Color.White,
     onSecondary = Color.White,
-    onBackground = Color(0xFFEEEEEE),
-    onSurface = Color(0xFFEEEEEE),
-    surfaceVariant = Color(0xFF004D00)
+    onBackground = TextPrimary,
+    onSurface = TextPrimary,
+    surfaceVariant = DarkSurfaceVariant
+)
+
+val CyanColorScheme = darkColorScheme(
+    primary = SystemCyanNeon,
+    secondary = Color(0xFF18FFFF),
+    background = DarkBackground,
+    surface = DarkSurface,
+    onPrimary = Color.Black,
+    onSecondary = Color.Black,
+    onBackground = TextPrimary,
+    onSurface = TextPrimary,
+    surfaceVariant = DarkSurfaceVariant
+)
+
+val GreyColorScheme = darkColorScheme(
+    primary = SystemGreyNeon,
+    secondary = Color(0xFF90A4AE),
+    background = DarkBackground,
+    surface = DarkSurface,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onBackground = TextPrimary,
+    onSurface = TextPrimary,
+    surfaceVariant = DarkSurfaceVariant
 )

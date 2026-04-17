@@ -7,17 +7,21 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.neuraknight.thesystem.data.models.AppData
-import com.neuraknight.thesystem.data.models.CustomTask
 import com.neuraknight.thesystem.data.models.Exercise
+import com.neuraknight.thesystem.data.models.Habit
+import com.neuraknight.thesystem.data.models.Prayer
 import com.neuraknight.thesystem.data.models.QuestExercise
 import com.neuraknight.thesystem.data.models.Settings
 import com.neuraknight.thesystem.data.repository.DataRepository
+import com.neuraknight.thesystem.utils.SunCalc
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 import kotlin.math.floor
 import kotlin.math.min
 import kotlin.math.pow
@@ -34,6 +38,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     init {
         appData = repository.loadData()
+        if (appData.setupComplete && appData.prayers.isEmpty()) {
+            calculatePrayers()
+        }
     }
 
     private fun saveData() {
@@ -73,7 +80,46 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             setupComplete = true,
             quest = appData.quest.copy(nextReset = calculateNextReset(System.currentTimeMillis()))
         )
+        calculatePrayers()
         generateNewQuest()
+    }
+
+    fun calculatePrayers() {
+        val cal = Calendar.getInstance()
+        val lat = appData.settings.prayerLatitude
+        val lng = appData.settings.prayerLongitude
+        
+        val method = when (appData.settings.prayerAlgorithm) {
+            "mwl" -> SunCalc.PrayerMethod.MWL
+            "isna" -> SunCalc.PrayerMethod.ISNA
+            "egypto" -> SunCalc.PrayerMethod.EGYPTO
+            "makkkah" -> SunCalc.PrayerMethod.MAKKAH
+            "karachi" -> SunCalc.PrayerMethod.KARACHI
+            else -> SunCalc.PrayerMethod.DEFAULT
+        }
+        
+        val sunTimes = SunCalc.getPrayerTimes(cal, lat, lng, method)
+        val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
+        
+        val newPrayers = mutableListOf(
+            Prayer("Fajr", sunTimes.fajr?.let { sdf.format(it) } ?: "--:--", false, sunTimes.fajr),
+            Prayer("Dhuhr", sunTimes.dhuhr?.let { sdf.format(it) } ?: "--:--", false, sunTimes.dhuhr),
+            Prayer("Asr", sunTimes.asr?.let { sdf.format(it) } ?: "--:--", false, sunTimes.asr),
+            Prayer("Maghrib", sunTimes.maghrib?.let { sdf.format(it) } ?: "--:--", false, sunTimes.maghrib),
+            Prayer("Isha", sunTimes.isha?.let { sdf.format(it) } ?: "--:--", false, sunTimes.isha)
+        )
+        
+        appData = appData.copy(prayers = newPrayers)
+        saveData()
+    }
+
+    fun togglePrayerDone(index: Int, isDone: Boolean) {
+        val updatedPrayers = appData.prayers.toMutableList()
+        if (index in updatedPrayers.indices) {
+            updatedPrayers[index] = updatedPrayers[index].copy(done = isDone)
+            appData = appData.copy(prayers = updatedPrayers)
+            saveData()
+        }
     }
 
     fun toggleQuestExercise(index: Int, isDone: Boolean) {
@@ -100,6 +146,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             }
             toggleQuestExercise(index, true)
         }
+    }
+
+    fun skipTimedExercise(index: Int) {
+        timerJobs[index]?.cancel()
+        toggleQuestExercise(index, true)
     }
 
     private fun checkQuestCompletion() {
@@ -130,6 +181,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             )
 
             appData = appData.copy(user = user, quest = appData.quest.copy(completed = true))
+            generateExtraExercises() // Generate bonus exercises when main completed
             viewModelScope.launch { _toastMessage.emit("Quest Completed!") }
             calculateLevelFromTotalXp()
         } else {
@@ -149,25 +201,43 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             next = calculateXpForLevel(lvl + 1)
         }
 
-        val apGained = (lvl - oldLevel) * appData.scaling.apPerLevel
+        // Cap at level 31 for display purposes but allow XP to accumulate
+        val displayLevel = min(lvl, 31)
+        val actualLevel = lvl
+        
+        val apGained = if (lvl > oldLevel) {
+            // Calculate AP differently for first 10 levels (faster)
+            val normalLevels = maxOf(0, min(lvl, appData.scaling.fastLevelCap) - oldLevel)
+            val extraLevels = maxOf(0, lvl - appData.scaling.fastLevelCap)
+            (normalLevels + extraLevels) * appData.scaling.apPerLevel
+        } else 0
 
         appData = appData.copy(
             user = appData.user.copy(
-                level = lvl,
+                level = displayLevel,
+                totalXp = appData.user.totalXp,
                 xpProgress = appData.user.totalXp - cumulative,
                 xpNeeded = next,
                 stats = appData.user.stats.copy(AP = appData.user.stats.AP + apGained)
             )
         )
 
-        if (lvl > oldLevel) {
+        if (displayLevel > oldLevel) {
             viewModelScope.launch { _toastMessage.emit("You Leveled Up!") }
         }
         saveData()
     }
 
-    private fun calculateXpForLevel(lvl: Int): Double =
-        floor(appData.scaling.baseXP * lvl.toDouble().pow(appData.scaling.exponent))
+    private fun calculateXpForLevel(lvl: Int): Double {
+        // Fast progression for levels 1-10, then normal
+        return if (lvl <= appData.scaling.fastLevelCap) {
+            floor(appData.scaling.baseXP * lvl.toDouble().pow(appData.scaling.exponentFast))
+        } else {
+            val baseAfterFast = floor(appData.scaling.baseXP * appData.scaling.fastLevelCap.toDouble().pow(appData.scaling.exponentFast))
+            val additional = (lvl - appData.scaling.fastLevelCap).toDouble()
+            baseAfterFast + floor(additional * 100 * (1 + additional * 0.1))
+        }
+    }
 
     private fun checkStreakRewards() {
         val streak = appData.user.streak
@@ -204,11 +274,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun usePasscard() {
+fun usePasscard() {
         if (appData.user.passcards > 0) {
             appData = appData.copy(
                 user = appData.user.copy(passcards = appData.user.passcards - 1),
-                quest = appData.quest.copy(completed = true)
+                quest = appData.quest.copy(
+                    completed = true,
+                    usedPasscard = true
+                )
             )
             viewModelScope.launch { _toastMessage.emit("Day passed with a passcard!") }
             saveData()
@@ -217,11 +290,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun resetQuest(force: Boolean) {
         if (force) {
-            if (appData.quest.completed) {
+            if (appData.quest.completed || appData.quest.usedPasscard) {
                 val newStreak = appData.user.streak + 1
                 appData = appData.copy(
                     user = appData.user.copy(streak = newStreak),
-                    quest = appData.quest.copy(nextReset = calculateNextReset(appData.quest.nextReset))
+                    quest = appData.quest.copy(
+                        nextReset = calculateNextResetMidnight(),
+                        completed = false,
+                        usedPasscard = false
+                    )
                 )
                 checkStreakRewards()
                 generateNewQuest()
@@ -229,7 +306,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 viewModelScope.launch { _toastMessage.emit("Quest not completed yet.") }
             }
         } else {
-            if (!appData.quest.completed) {
+            if (!appData.quest.completed && !appData.quest.usedPasscard) {
                 // Apply penalty: lose 10% of total XP
                 appData = appData.copy(
                     user = appData.user.copy(
@@ -238,14 +315,82 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     )
                 )
                 calculateLevelFromTotalXp()
-            } else {
-                val newStreak = appData.user.streak + 1
-                appData = appData.copy(user = appData.user.copy(streak = newStreak))
-                checkStreakRewards()
             }
-            appData = appData.copy(quest = appData.quest.copy(nextReset = calculateNextReset(System.currentTimeMillis())))
+            // Reset quest at midnight - but keep habits, prayers, and passcards intact
+            appData = appData.copy(
+                quest = appData.quest.copy(
+                    nextReset = calculateNextResetMidnight(),
+                    completed = false,
+                    usedPasscard = false
+                )
+            )
             generateNewQuest()
         }
+    }
+
+    private fun calculateNextResetMidnight(): Long {
+        val now = System.currentTimeMillis()
+        val calendar = java.util.Calendar.getInstance()
+        calendar.timeInMillis = now
+        calendar.add(java.util.Calendar.DAY_OF_MONTH, 1)
+        calendar.set(java.util.Calendar.HOUR_OF_DAY, 0)
+        calendar.set(java.util.Calendar.MINUTE, 0)
+        calendar.set(java.util.Calendar.SECOND, 0)
+        calendar.set(java.util.Calendar.MILLISECOND, 0)
+        return calendar.timeInMillis
+    }
+
+    fun toggleExtraExercise(index: Int, isDone: Boolean) {
+        val currentExtras = appData.quest.extraExercises.toMutableList()
+        if (index in currentExtras.indices) {
+            currentExtras[index] = currentExtras[index].copy(done = isDone)
+            appData = appData.copy(quest = appData.quest.copy(extraExercises = currentExtras))
+            
+            // Give bonus XP for extra exercises (no penalty for not doing them)
+            if (isDone) {
+                val exercise = currentExtras[index]
+                val exData = appData.exercises.find { it.name == exercise.name }
+                if (exData != null) {
+                    val xpGain = exercise.amount * exData.xpPerRep * 0.5 // 50% XP for bonus exercises
+                    val user = appData.user.copy(
+                        totalXp = appData.user.totalXp + xpGain
+                    )
+                    appData = appData.copy(user = user)
+                    calculateLevelFromTotalXp()
+                }
+            }
+            saveData()
+        }
+    }
+
+    private fun generateExtraExercises() {
+        if (!appData.quest.completed) {
+            appData = appData.copy(quest = appData.quest.copy(extraExercises = listOf()))
+            return
+        }
+        
+        val level = appData.user.level
+        val settings = appData.settings
+        
+        // Filter exercises based on settings
+        val available = appData.exercises.filter { ex ->
+            ex.requiredLevel <= level && 
+            settings.equipmentTypes.contains(ex.equipment) &&
+            (settings.trainingGoals.isEmpty() || 
+             settings.trainingGoals.contains(ex.muscleGroup) ||
+             ex.muscleGroup == "full" ||
+             ex.muscleGroup == "cardio")
+        }
+        
+        // Pick 2-3 random bonus exercises
+        val numExtra = (2..3).random()
+        val selected = available.shuffled().take(numExtra).map { ex ->
+            val base = if (ex.timed) appData.scaling.baseTime else appData.scaling.baseReps
+            val amount = (base * 0.3).toInt().coerceAtLeast(5)
+            QuestExercise(name = ex.name, amount = amount, done = false, timed = ex.timed, muscleGroup = ex.muscleGroup, equipment = ex.equipment)
+        }
+        
+        appData = appData.copy(quest = appData.quest.copy(extraExercises = selected))
     }
 
     fun toggleHabitDone(index: Int, isDone: Boolean) {
@@ -257,29 +402,29 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun addCustomTask(name: String) {
+    fun addHabit(name: String, isCustom: Boolean = true) {
         if (name.isNotBlank()) {
-            val updatedTasks = appData.customTasks.toMutableList()
-            updatedTasks.add(CustomTask(name = name, done = false))
-            appData = appData.copy(customTasks = updatedTasks)
+            val updatedHabits = appData.habits.toMutableList()
+            updatedHabits.add(Habit(name = name, done = false, isCustom = isCustom))
+            appData = appData.copy(habits = updatedHabits)
             saveData()
         }
     }
 
-    fun deleteCustomTask(index: Int) {
-        val updatedTasks = appData.customTasks.toMutableList()
-        if (index in updatedTasks.indices) {
-            updatedTasks.removeAt(index)
-            appData = appData.copy(customTasks = updatedTasks)
+    fun deleteHabit(index: Int) {
+        val updatedHabits = appData.habits.toMutableList()
+        if (index in updatedHabits.indices) {
+            updatedHabits.removeAt(index)
+            appData = appData.copy(habits = updatedHabits)
             saveData()
         }
     }
 
-    fun toggleCustomTaskDone(index: Int, isDone: Boolean) {
-        val updatedTasks = appData.customTasks.toMutableList()
-        if (index in updatedTasks.indices) {
-            updatedTasks[index] = updatedTasks[index].copy(done = isDone)
-            appData = appData.copy(customTasks = updatedTasks)
+    fun editHabit(index: Int, newName: String) {
+        val updatedHabits = appData.habits.toMutableList()
+        if (index in updatedHabits.indices && newName.isNotBlank()) {
+            updatedHabits[index] = updatedHabits[index].copy(name = newName)
+            appData = appData.copy(habits = updatedHabits)
             saveData()
         }
     }
@@ -299,13 +444,34 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun saveSettings(name: String, color: String, showHabits: Boolean, showCustom: Boolean) {
+    fun saveSettings(
+        name: String,
+        color: String,
+        gender: String = "male",
+        prayerAlgorithm: String = "default",
+        difficulty: String = "beginner",
+        daysPerWeek: Int = 3,
+        trainingGoals: List<String> = listOf("strength"),
+        equipmentTypes: List<String> = listOf("bodyweight"),
+        showPrayers: Boolean = true
+    ) {
         appData = appData.copy(
-            user = appData.user.copy(name = name.ifEmpty { "Unknown" }),
+            user = appData.user.copy(
+                name = name.ifEmpty { "Unknown" },
+                gender = gender
+            ),
             settings = Settings(
                 color = color,
-                showHabits = showHabits,
-                showCustom = showCustom
+                showHabits = true,
+                gender = gender,
+                prayerAlgorithm = prayerAlgorithm,
+                difficulty = difficulty,
+                daysPerWeek = daysPerWeek,
+                trainingGoals = trainingGoals,
+                equipmentTypes = equipmentTypes,
+                showPrayers = showPrayers,
+                prayerLatitude = appData.settings.prayerLatitude,
+                prayerLongitude = appData.settings.prayerLongitude
             )
         )
         saveData()
@@ -342,15 +508,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             val exp = if (ex.timed) appData.scaling.exponent2 else appData.scaling.exponent3
             val fraction = (level.toDouble() / appData.scaling.repsProgressSpeed).pow(exp)
             val amount = min(maxV.toDouble(), floor(ex.baseScale * (base + (maxV - base) * fraction))).toInt()
-            QuestExercise(name = ex.name, amount = amount, done = false, timed = ex.timed)
+            QuestExercise(name = ex.name, amount = amount, done = false, timed = ex.timed, muscleGroup = ex.muscleGroup, equipment = ex.equipment)
         }
 
-        appData.habits.forEach { it.done = false }
-        appData.customTasks.forEach { it.done = false }
-
+        // Don't reset habits, prayers - keep them for the day
+        // Only reset quest exercises
+        
         appData = appData.copy(
-            quest = appData.quest.copy(exercises = newQuestExercises, completed = false)
+            quest = appData.quest.copy(exercises = newQuestExercises, completed = false, usedPasscard = false)
         )
+        generateExtraExercises() // Generate bonus exercises if main completed
+        calculatePrayers() // Refresh times for the new day
         saveData()
     }
 }

@@ -43,13 +43,13 @@ fun SetupScreen(onSetupComplete: (String, String, String, String) -> Unit) {
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
         Spacer(modifier = Modifier.height(16.dp))
 
-        DropdownSelector("Workout Level", workoutOptions, workoutLevel) { workoutLevel = it }
+        DropdownSelector(label = "Workout Level", options = workoutOptions, selected = workoutLevel, onSelected = { workoutLevel = it })
         Spacer(modifier = Modifier.height(16.dp))
 
-        DropdownSelector("Goals", goalOptions, goal) { goal = it }
+        DropdownSelector(label = "Goals", options = goalOptions, selected = goal, onSelected = { goal = it })
         Spacer(modifier = Modifier.height(16.dp))
 
-        DropdownSelector("Color", colorOptions, color) { color = it }
+        DropdownSelector(label = "Color", options = colorOptions, selected = color, onSelected = { color = it })
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(onClick = { onSetupComplete(name, workoutLevel, goal, color) }) {
