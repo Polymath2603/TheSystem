@@ -93,7 +93,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             "mwl" -> SunCalc.PrayerMethod.MWL
             "isna" -> SunCalc.PrayerMethod.ISNA
             "egypto" -> SunCalc.PrayerMethod.EGYPTO
-            "makkkah" -> SunCalc.PrayerMethod.MAKKAH
+            "makkah" -> SunCalc.PrayerMethod.MAKKAH
             "karachi" -> SunCalc.PrayerMethod.KARACHI
             else -> SunCalc.PrayerMethod.DEFAULT
         }
@@ -153,6 +153,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         toggleQuestExercise(index, true)
     }
 
+    private val extraTimerJobs = mutableMapOf<Int, Job>()
+
+    fun startExtraTimedExercise(index: Int) {
+        val exercise = appData.quest.extraExercises.getOrNull(index) ?: return
+        if (extraTimerJobs[index]?.isActive == true) return
+
+        extraTimerJobs[index] = viewModelScope.launch {
+            for (time in exercise.amount downTo 1) {
+                delay(1000)
+                val currentExtras = appData.quest.extraExercises.toMutableList()
+                if (index in currentExtras.indices) {
+                    currentExtras[index] = currentExtras[index].copy(amount = time - 1)
+                    appData = appData.copy(quest = appData.quest.copy(extraExercises = currentExtras))
+                }
+            }
+            toggleExtraExercise(index, true)
+        }
+    }
+
+    fun skipExtraTimedExercise(index: Int) {
+        extraTimerJobs[index]?.cancel()
+        toggleExtraExercise(index, true)
+    }
+
     private fun checkQuestCompletion() {
         val allDone = appData.quest.exercises.all { it.done }
         if (allDone && !appData.quest.completed) {
@@ -203,7 +227,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         // Cap at level 31 for display purposes but allow XP to accumulate
         val displayLevel = min(lvl, 31)
-        val actualLevel = lvl
         
         val apGained = if (lvl > oldLevel) {
             // Calculate AP differently for first 10 levels (faster)
@@ -515,9 +538,8 @@ fun usePasscard() {
         // Only reset quest exercises
         
         appData = appData.copy(
-            quest = appData.quest.copy(exercises = newQuestExercises, completed = false, usedPasscard = false)
+            quest = appData.quest.copy(exercises = newQuestExercises, extraExercises = listOf(), completed = false, usedPasscard = false)
         )
-        generateExtraExercises() // Generate bonus exercises if main completed
         calculatePrayers() // Refresh times for the new day
         saveData()
     }

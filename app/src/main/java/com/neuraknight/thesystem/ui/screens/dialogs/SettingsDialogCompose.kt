@@ -2,7 +2,6 @@ package com.neuraknight.thesystem.ui.screens.dialogs
 
 import android.app.Activity
 import android.net.Uri
-import android.provider.MediaStore
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -56,7 +55,8 @@ fun SettingsDialog(
         "pink" to Color(0xFFE91E63),
         "orange" to Color(0xFFFF9800),
         "teal" to Color(0xFF009688),
-        "indigo" to Color(0xFF3F51B5)
+        "indigo" to Color(0xFF3F51B5),
+        "grey" to Color(0xFF607D8B)
     )
 
     val algorithmOptions = listOf(
@@ -64,7 +64,7 @@ fun SettingsDialog(
         "mwl" to "Muslim World League",
         "isna" to "ISNA (North America)",
         "egypto" to "Egyptian Authority",
-        "makkkah" to "Umm Al-Qura",
+        "makkah" to "Umm Al-Qura",
         "karachi" to "Karachi",
         "tehran" to "Tehran (Iran)",
         "jafari" to "Jafari (Wilayah)"
@@ -77,19 +77,32 @@ fun SettingsDialog(
 
     val sheetState = rememberModalBottomSheetState()
 
+    var imageError by remember { mutableStateOf<String?>(null) }
+
     val pickImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
         uri?.let {
             try {
-                val bitmap = MediaStore.Images.Media.getBitmap(context.contentResolver, it)
-                val file = java.io.File(context.filesDir, "profile_image.jpg")
-                val outputStream = java.io.FileOutputStream(file)
-                bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, outputStream)
-                outputStream.close()
-                viewModel.appData.user.profileImg = file.absolutePath
+                val inputStream = context.contentResolver.openInputStream(it)
+                if (inputStream != null) {
+                    val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
+                    inputStream.close()
+                    if (bitmap != null) {
+                        val file = java.io.File(context.filesDir, "profile_image.jpg")
+                        java.io.FileOutputStream(file).use { outputStream ->
+                            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, outputStream)
+                        }
+                        viewModel.appData.user.profileImg = file.absolutePath
+                        imageError = null
+                    } else {
+                        imageError = "Could not decode image"
+                    }
+                } else {
+                    imageError = "Could not open image"
+                }
             } catch (e: Exception) {
-                e.printStackTrace()
+                imageError = "Failed to save image: ${e.message}"
             }
         }
     }
@@ -138,6 +151,9 @@ fun SettingsDialog(
                     Column {
                         Text("Profile Picture", style = MaterialTheme.typography.bodyLarge)
                         Text("Tap to change", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                        if (imageError != null) {
+                            Text(imageError!!, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                        }
                     }
                 }
 
@@ -234,7 +250,7 @@ fun SettingsDialog(
                 }
 
                 Spacer(modifier = Modifier.height(8.dp))
-                Text("Location is auto-detected for accurate prayer times", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                Text("Prayer times use default coordinates. Location detection coming in a future update.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
             }
 
             Spacer(modifier = Modifier.height(24.dp))

@@ -17,6 +17,10 @@ fun TheSystemTheme(
         "purple" -> PurpleColorScheme
         "cyan" -> CyanColorScheme
         "grey" -> GreyColorScheme
+        "pink" -> PinkColorScheme
+        "orange" -> OrangeColorScheme
+        "teal" -> TealColorScheme
+        "indigo" -> IndigoColorScheme
         else -> BlueColorScheme
     }
 

@@ -16,6 +16,10 @@ val SystemPurpleNeon = Color(0xFFD500F9)
 val SystemYellowNeon = Color(0xFFFFEA00)
 val SystemCyanNeon = Color(0xFF00B8D4)
 val SystemGreyNeon = Color(0xFF607D8B)
+val SystemPinkNeon = Color(0xFFFF4081)
+val SystemOrangeNeon = Color(0xFFFF6D00)
+val SystemTealNeon = Color(0xFF1DE9B6)
+val SystemIndigoNeon = Color(0xFF536DFE)
 
 // Support Colors
 val TextPrimary = Color(0xFFF0F2F5)

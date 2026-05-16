@@ -11,8 +11,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.DragHandle
-import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,9 +26,12 @@ fun HabitsTab(viewModel: MainViewModel) {
     val habits = viewModel.appData.habits
     var newHabitName by remember { mutableStateOf("") }
     
-    // Separate done and undone habits
-    val sortedHabits = remember(habits) {
-        habits.sortedBy { it.done }
+    // Separate done and undone habits, tracking original indices
+    val indexedHabits = remember(habits) {
+        habits.mapIndexed { idx, habit -> idx to habit }
+    }
+    val sortedIndexedHabits = remember(habits) {
+        indexedHabits.sortedBy { it.second.done }
     }
     
     // Long press dialog state
@@ -112,10 +113,9 @@ fun HabitsTab(viewModel: MainViewModel) {
 
         // Habits list - done items at the end
         itemsIndexed(
-            items = sortedHabits,
-            key = { idx, habit -> "habit_${habit.name}_$idx" }
-        ) { index, habit ->
-            val actualIndex = habits.indexOf(habit)
+            items = sortedIndexedHabits,
+            key = { idx, (origIdx, _) -> "habit_${origIdx}_$idx" }
+        ) { _, (actualIndex, habit) ->
             val borderColor = if (habit.done) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
             val bgColor = if (habit.done) MaterialTheme.colorScheme.secondary.copy(alpha = 0.05f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
 
@@ -137,15 +137,6 @@ fun HabitsTab(viewModel: MainViewModel) {
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                Icon(
-                    imageVector = Icons.Default.DragHandle,
-                    contentDescription = "Drag to reorder",
-                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
-                    modifier = Modifier.size(20.dp)
-                )
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = habit.name.uppercase(),

@@ -26,7 +26,7 @@ fun ProfileTab(viewModel: MainViewModel) {
     var showSettingsDialog by remember { mutableStateOf(false) }
 
     if (showSettingsDialog) {
-        com.neuraknight.thesystem.ui.screens.dialogs.SettingsDialog(
+        SettingsDialog(
             viewModel = viewModel,
             onDismiss = { showSettingsDialog = false }
         )

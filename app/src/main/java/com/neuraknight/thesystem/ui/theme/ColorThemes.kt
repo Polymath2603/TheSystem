@@ -86,3 +86,51 @@ val GreyColorScheme = darkColorScheme(
     onSurface = TextPrimary,
     surfaceVariant = DarkSurfaceVariant
 )
+
+val PinkColorScheme = darkColorScheme(
+    primary = SystemPinkNeon,
+    secondary = Color(0xFFFF80AB),
+    background = DarkBackground,
+    surface = DarkSurface,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onBackground = TextPrimary,
+    onSurface = TextPrimary,
+    surfaceVariant = DarkSurfaceVariant
+)
+
+val OrangeColorScheme = darkColorScheme(
+    primary = SystemOrangeNeon,
+    secondary = Color(0xFFFF9100),
+    background = DarkBackground,
+    surface = DarkSurface,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onBackground = TextPrimary,
+    onSurface = TextPrimary,
+    surfaceVariant = DarkSurfaceVariant
+)
+
+val TealColorScheme = darkColorScheme(
+    primary = SystemTealNeon,
+    secondary = Color(0xFF64FFDA),
+    background = DarkBackground,
+    surface = DarkSurface,
+    onPrimary = Color.Black,
+    onSecondary = Color.Black,
+    onBackground = TextPrimary,
+    onSurface = TextPrimary,
+    surfaceVariant = DarkSurfaceVariant
+)
+
+val IndigoColorScheme = darkColorScheme(
+    primary = SystemIndigoNeon,
+    secondary = Color(0xFF8C9EFF),
+    background = DarkBackground,
+    surface = DarkSurface,
+    onPrimary = Color.White,
+    onSecondary = Color.White,
+    onBackground = TextPrimary,
+    onSurface = TextPrimary,
+    surfaceVariant = DarkSurfaceVariant
+)

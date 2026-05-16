@@ -88,8 +88,8 @@ fun WorkoutTab(viewModel: MainViewModel) {
                         isDone = exercise.done,
                         isTimed = exercise.timed,
                         onToggle = { viewModel.toggleExtraExercise(index, it) },
-                        onStartTimer = { viewModel.startTimedExercise(quest.exercises.size + index) },
-                        onSkipTimer = { viewModel.skipTimedExercise(quest.exercises.size + index) }
+                        onStartTimer = { viewModel.startExtraTimedExercise(index) },
+                        onSkipTimer = { viewModel.skipExtraTimedExercise(index) }
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                 }
@@ -252,8 +252,7 @@ fun DayCountdown(timeLeft: Long, completed: Boolean) {
             Spacer(modifier = Modifier.height(12.dp))
             
             val primaryColor = MaterialTheme.colorScheme.primary
-            val primaryColorValue = primaryColor
-            
+
             Box(
                 contentAlignment = Alignment.Center,
                 modifier = Modifier.size(140.dp)
@@ -269,7 +268,7 @@ fun DayCountdown(timeLeft: Long, completed: Boolean) {
                     )
                     
                     drawArc(
-                        color = if (completed) primaryColorValue else primaryColorValue,
+                        color = primaryColor,
                         startAngle = -90f,
                         sweepAngle = 360f * progress,
                         useCenter = false,

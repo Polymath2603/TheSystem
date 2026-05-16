@@ -29,6 +29,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -37,6 +38,8 @@ import com.neuraknight.thesystem.R
 import com.neuraknight.thesystem.data.models.User
 import com.neuraknight.thesystem.ui.screens.tabs.*
 import com.neuraknight.thesystem.ui.viewmodel.MainViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import java.io.File
 import kotlin.math.roundToInt
 
@@ -68,10 +71,7 @@ fun MainScreen(viewModel: MainViewModel) {
             Spacer(modifier = Modifier.height(24.dp))
 
             val correctedIndex = selectedTabIndex.coerceIn(0, tabs.lastIndex.coerceAtLeast(0))
-            
-            // Calculate tab width accounting for padding
             val tabPadding = 8.dp
-            val totalPadding = tabPadding * (tabs.size + 1)
             
             ScrollableTabRow(
                 selectedTabIndex = correctedIndex,
@@ -123,6 +123,7 @@ fun MainScreen(viewModel: MainViewModel) {
                     "Prayers" -> PrayerTab(viewModel)
                     "Habits" -> HabitsTab(viewModel)
                     "Profile" -> ProfileTab(viewModel)
+                    else -> WorkoutTab(viewModel)
                 }
             }
         }
@@ -155,10 +156,15 @@ fun UserInfoHeader(user: User) {
                 .shadow(elevation = 10.dp, shape = CircleShape, spotColor = MaterialTheme.colorScheme.primary)
         ) {
             if (user.profileImg.isNotEmpty() && File(user.profileImg).exists()) {
-                val bitmap = android.graphics.BitmapFactory.decodeFile(user.profileImg)
+                var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+                LaunchedEffect(user.profileImg) {
+                    bitmap = withContext(Dispatchers.IO) {
+                        android.graphics.BitmapFactory.decodeFile(user.profileImg)
+                    }
+                }
                 if (bitmap != null) {
                     Image(
-                        bitmap = bitmap.asImageBitmap(),
+                        bitmap = bitmap!!.asImageBitmap(),
                         contentDescription = "User Profile",
                         modifier = Modifier.fillMaxSize(),
                         contentScale = ContentScale.Crop
