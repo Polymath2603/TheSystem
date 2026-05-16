@@ -123,7 +123,17 @@ data class Settings(
     var difficulty: String = "beginner",
     var daysPerWeek: Int = 3,
     var trainingGoals: List<String> = listOf("strength"),
-    var equipmentTypes: List<String> = listOf("bodyweight")
+    var equipmentTypes: List<String> = listOf("bodyweight"),
+    // Notification settings
+    var notificationsEnabled: Boolean = true,
+    var workoutReminderEnabled: Boolean = true,
+    var workoutReminderHour: Int = 8,
+    var workoutReminderMinute: Int = 0,
+    var prayerNotificationsEnabled: Boolean = true,
+    var prayerNotificationLeadMinutes: Int = 10,
+    var streakWarningEnabled: Boolean = true,
+    var streakWarningHour: Int = 21,
+    var streakWarningMinute: Int = 0
 )
 
 fun getDefaultExercises(): List<Exercise> {

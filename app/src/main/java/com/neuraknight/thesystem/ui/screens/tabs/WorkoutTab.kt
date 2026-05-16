@@ -10,6 +10,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -94,7 +95,26 @@ fun WorkoutTab(viewModel: MainViewModel) {
                     Spacer(modifier = Modifier.height(12.dp))
                 }
             }
-        } else {
+        }
+
+        // Next Day button - available when quest is completed or passcard used
+        if (quest.completed || quest.usedPasscard) {
+            item {
+                Spacer(modifier = Modifier.height(8.dp))
+                Button(
+                    onClick = { viewModel.resetQuest(force = true) },
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
+                ) {
+                    Icon(Icons.Default.SkipNext, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text("Next Day", fontWeight = FontWeight.Bold)
+                }
+            }
+        }
+
+        if (quest.usedPasscard) {
             // Passcard used - show rest day message
             item {
                 Surface(

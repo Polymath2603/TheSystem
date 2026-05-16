@@ -57,6 +57,7 @@ dependencies {
     implementation(libs.androidx.compose.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.material.icons.extended)
+    implementation(libs.androidx.work.runtime)
     implementation("com.google.code.gson:gson:2.10.1")
     
     testImplementation(libs.junit)

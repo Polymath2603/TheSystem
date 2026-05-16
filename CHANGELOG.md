@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.0] - 2026-05-02
+
+### Changed
+- Rewrote README with simpler format
+- Removed outdated FUTURE_FEATURES.md
+- Cleaned up .gitignore entries
+
+---
+
 ## [1.0.0] - 2025-02-04
 
 ### Added

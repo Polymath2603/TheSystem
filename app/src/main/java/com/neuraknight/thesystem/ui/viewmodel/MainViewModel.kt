@@ -13,6 +13,8 @@ import com.neuraknight.thesystem.data.models.Prayer
 import com.neuraknight.thesystem.data.models.QuestExercise
 import com.neuraknight.thesystem.data.models.Settings
 import com.neuraknight.thesystem.data.repository.DataRepository
+import com.neuraknight.thesystem.notifications.NotificationHelper
+import com.neuraknight.thesystem.notifications.NotificationScheduler
 import com.neuraknight.thesystem.utils.SunCalc
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -35,11 +37,36 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val toastMessage = _toastMessage.asSharedFlow()
 
     private val timerJobs = mutableMapOf<Int, Job>()
+    private val originalTimedAmounts = mutableMapOf<Int, Int>()
 
     init {
         appData = repository.loadData()
         if (appData.setupComplete && appData.prayers.isEmpty()) {
             calculatePrayers()
+        }
+        if (appData.setupComplete) {
+            initNotifications()
+            checkPendingQuestReset()
+        }
+    }
+
+    private fun initNotifications() {
+        val context = getApplication<Application>()
+        NotificationHelper.createChannels(context)
+        scheduleNotifications()
+    }
+
+    fun scheduleNotifications() {
+        val context = getApplication<Application>()
+        NotificationScheduler.scheduleAll(context, appData.settings)
+    }
+
+    private fun checkPendingQuestReset() {
+        val context = getApplication<Application>()
+        val prefs = context.getSharedPreferences("TheSystemApp", android.content.Context.MODE_PRIVATE)
+        if (prefs.getBoolean("quest_reset_pending", false)) {
+            prefs.edit().putBoolean("quest_reset_pending", false).apply()
+            resetQuest(force = false)
         }
     }
 
@@ -82,6 +109,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         )
         calculatePrayers()
         generateNewQuest()
+        initNotifications()
     }
 
     fun calculatePrayers() {
@@ -135,6 +163,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val exercise = appData.quest.exercises.getOrNull(index) ?: return
         if (timerJobs[index]?.isActive == true) return
 
+        originalTimedAmounts[index] = exercise.amount
         timerJobs[index] = viewModelScope.launch {
             for (time in exercise.amount downTo 1) {
                 delay(1000)
@@ -143,6 +172,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     currentExercises[index] = currentExercises[index].copy(amount = time - 1)
                     appData = appData.copy(quest = appData.quest.copy(exercises = currentExercises))
                 }
+            }
+            // Restore original amount before marking done so XP is calculated correctly
+            val originalAmount = originalTimedAmounts.remove(index) ?: exercise.amount
+            val currentExercises = appData.quest.exercises.toMutableList()
+            if (index in currentExercises.indices) {
+                currentExercises[index] = currentExercises[index].copy(amount = originalAmount)
+                appData = appData.copy(quest = appData.quest.copy(exercises = currentExercises))
             }
             toggleQuestExercise(index, true)
         }
@@ -154,11 +190,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     private val extraTimerJobs = mutableMapOf<Int, Job>()
+    private val originalExtraTimedAmounts = mutableMapOf<Int, Int>()
 
     fun startExtraTimedExercise(index: Int) {
         val exercise = appData.quest.extraExercises.getOrNull(index) ?: return
         if (extraTimerJobs[index]?.isActive == true) return
 
+        originalExtraTimedAmounts[index] = exercise.amount
         extraTimerJobs[index] = viewModelScope.launch {
             for (time in exercise.amount downTo 1) {
                 delay(1000)
@@ -167,6 +205,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                     currentExtras[index] = currentExtras[index].copy(amount = time - 1)
                     appData = appData.copy(quest = appData.quest.copy(extraExercises = currentExtras))
                 }
+            }
+            val originalAmount = originalExtraTimedAmounts.remove(index) ?: exercise.amount
+            val currentExtras = appData.quest.extraExercises.toMutableList()
+            if (index in currentExtras.indices) {
+                currentExtras[index] = currentExtras[index].copy(amount = originalAmount)
+                appData = appData.copy(quest = appData.quest.copy(extraExercises = currentExtras))
             }
             toggleExtraExercise(index, true)
         }
@@ -247,6 +291,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
         if (displayLevel > oldLevel) {
             viewModelScope.launch { _toastMessage.emit("You Leveled Up!") }
+            NotificationHelper.showLevelUp(getApplication(), displayLevel)
         }
         saveData()
     }
@@ -349,6 +394,7 @@ fun usePasscard() {
             )
             generateNewQuest()
         }
+        NotificationScheduler.scheduleQuestReset(getApplication())
     }
 
     private fun calculateNextResetMidnight(): Long {
@@ -476,7 +522,16 @@ fun usePasscard() {
         daysPerWeek: Int = 3,
         trainingGoals: List<String> = listOf("strength"),
         equipmentTypes: List<String> = listOf("bodyweight"),
-        showPrayers: Boolean = true
+        showPrayers: Boolean = true,
+        notificationsEnabled: Boolean = true,
+        workoutReminderEnabled: Boolean = true,
+        workoutReminderHour: Int = 8,
+        workoutReminderMinute: Int = 0,
+        prayerNotificationsEnabled: Boolean = true,
+        prayerNotificationLeadMinutes: Int = 10,
+        streakWarningEnabled: Boolean = true,
+        streakWarningHour: Int = 21,
+        streakWarningMinute: Int = 0
     ) {
         appData = appData.copy(
             user = appData.user.copy(
@@ -494,10 +549,20 @@ fun usePasscard() {
                 equipmentTypes = equipmentTypes,
                 showPrayers = showPrayers,
                 prayerLatitude = appData.settings.prayerLatitude,
-                prayerLongitude = appData.settings.prayerLongitude
+                prayerLongitude = appData.settings.prayerLongitude,
+                notificationsEnabled = notificationsEnabled,
+                workoutReminderEnabled = workoutReminderEnabled,
+                workoutReminderHour = workoutReminderHour,
+                workoutReminderMinute = workoutReminderMinute,
+                prayerNotificationsEnabled = prayerNotificationsEnabled,
+                prayerNotificationLeadMinutes = prayerNotificationLeadMinutes,
+                streakWarningEnabled = streakWarningEnabled,
+                streakWarningHour = streakWarningHour,
+                streakWarningMinute = streakWarningMinute
             )
         )
         saveData()
+        scheduleNotifications()
     }
 
     private fun calculateNextReset(from: Long): Long {

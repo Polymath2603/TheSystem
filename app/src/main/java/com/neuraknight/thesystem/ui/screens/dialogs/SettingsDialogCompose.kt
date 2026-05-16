@@ -1,9 +1,13 @@
 package com.neuraknight.thesystem.ui.screens.dialogs
 
+import android.Manifest
 import android.app.Activity
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -44,6 +48,24 @@ fun SettingsDialog(
     var selectedGoals by remember { mutableStateOf(settings.trainingGoals.toMutableList()) }
     var selectedEquipment by remember { mutableStateOf(settings.equipmentTypes.toMutableList()) }
     var showPrayers by remember { mutableStateOf(settings.showPrayers) }
+    var notificationsEnabled by remember { mutableStateOf(settings.notificationsEnabled) }
+    var workoutReminderEnabled by remember { mutableStateOf(settings.workoutReminderEnabled) }
+    var workoutReminderHour by remember { mutableIntStateOf(settings.workoutReminderHour) }
+    var workoutReminderMinute by remember { mutableIntStateOf(settings.workoutReminderMinute) }
+    var prayerNotificationsEnabled by remember { mutableStateOf(settings.prayerNotificationsEnabled) }
+    var prayerNotificationLeadMinutes by remember { mutableIntStateOf(settings.prayerNotificationLeadMinutes) }
+    var streakWarningEnabled by remember { mutableStateOf(settings.streakWarningEnabled) }
+    var streakWarningHour by remember { mutableIntStateOf(settings.streakWarningHour) }
+    var streakWarningMinute by remember { mutableIntStateOf(settings.streakWarningMinute) }
+
+    var showWorkoutTimePicker by remember { mutableStateOf(false) }
+    var showStreakTimePicker by remember { mutableStateOf(false) }
+
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (!isGranted) notificationsEnabled = false
+    }
 
     val colorOptions = listOf(
         "blue" to Color(0xFF2196F3),
@@ -192,6 +214,116 @@ fun SettingsDialog(
 
             Spacer(modifier = Modifier.height(16.dp))
 
+            SettingsSection(title = "Notifications") {
+                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Enable Notifications", style = MaterialTheme.typography.bodyLarge)
+                        Text("Workout, prayer, and streak alerts", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                    }
+                    Switch(checked = notificationsEnabled, onCheckedChange = { enabled ->
+                        if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        }
+                        notificationsEnabled = enabled
+                    })
+                }
+
+                if (notificationsEnabled) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Workout Reminder
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Workout Reminder", style = MaterialTheme.typography.bodyLarge)
+                            Text("Daily quest notification", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                        }
+                        Switch(checked = workoutReminderEnabled, onCheckedChange = { workoutReminderEnabled = it })
+                    }
+
+                    if (workoutReminderEnabled) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth().clickable { showWorkoutTimePicker = true }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Schedule, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Reminder Time", modifier = Modifier.weight(1f))
+                            Text("${workoutReminderHour.toString().padStart(2, '0')}:${workoutReminderMinute.toString().padStart(2, '0')}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Prayer Notifications
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Prayer Alerts", style = MaterialTheme.typography.bodyLarge)
+                            Text("Notify before each prayer", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                        }
+                        Switch(checked = prayerNotificationsEnabled, onCheckedChange = { prayerNotificationsEnabled = it })
+                    }
+
+                    if (prayerNotificationsEnabled) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                            Text("Lead Time", modifier = Modifier.weight(1f))
+                            Text("${prayerNotificationLeadMinutes} min", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        }
+                        Slider(value = prayerNotificationLeadMinutes.toFloat(), onValueChange = { prayerNotificationLeadMinutes = it.toInt() }, valueRange = 0f..30f, steps = 5, modifier = Modifier.fillMaxWidth())
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    // Streak Warning
+                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Streak Warning", style = MaterialTheme.typography.bodyLarge)
+                            Text("Evening reminder if streak at risk", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                        }
+                        Switch(checked = streakWarningEnabled, onCheckedChange = { streakWarningEnabled = it })
+                    }
+
+                    if (streakWarningEnabled) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(modifier = Modifier.fillMaxWidth().clickable { showStreakTimePicker = true }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+                            Icon(Icons.Default.Schedule, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Warning Time", modifier = Modifier.weight(1f))
+                            Text("${streakWarningHour.toString().padStart(2, '0')}:${streakWarningMinute.toString().padStart(2, '0')}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
+                        }
+                    }
+                }
+            }
+
+            // Time Picker Dialogs
+            if (showWorkoutTimePicker) {
+                val timePickerState = rememberTimePickerState(initialHour = workoutReminderHour, initialMinute = workoutReminderMinute)
+                AlertDialog(
+                    onDismissRequest = { showWorkoutTimePicker = false },
+                    confirmButton = { TextButton(onClick = { workoutReminderHour = timePickerState.hour; workoutReminderMinute = timePickerState.minute; showWorkoutTimePicker = false }) { Text("OK") } },
+                    dismissButton = { TextButton(onClick = { showWorkoutTimePicker = false }) { Text("Cancel") } },
+                    text = { TimePicker(state = timePickerState) }
+                )
+            }
+
+            if (showStreakTimePicker) {
+                val timePickerState = rememberTimePickerState(initialHour = streakWarningHour, initialMinute = streakWarningMinute)
+                AlertDialog(
+                    onDismissRequest = { showStreakTimePicker = false },
+                    confirmButton = { TextButton(onClick = { streakWarningHour = timePickerState.hour; streakWarningMinute = timePickerState.minute; showStreakTimePicker = false }) { Text("OK") } },
+                    dismissButton = { TextButton(onClick = { showStreakTimePicker = false }) { Text("Cancel") } },
+                    text = { TimePicker(state = timePickerState) }
+                )
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
             SettingsSection(title = "Training") {
                 Text("Difficulty", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                 Spacer(modifier = Modifier.height(8.dp))
@@ -256,7 +388,7 @@ fun SettingsDialog(
             Spacer(modifier = Modifier.height(24.dp))
 
             Button(onClick = {
-                viewModel.saveSettings(name = name, color = selectedColor, gender = gender, prayerAlgorithm = prayerAlgorithm, difficulty = difficulty, daysPerWeek = daysPerWeek, trainingGoals = selectedGoals, equipmentTypes = selectedEquipment, showPrayers = showPrayers)
+                viewModel.saveSettings(name = name, color = selectedColor, gender = gender, prayerAlgorithm = prayerAlgorithm, difficulty = difficulty, daysPerWeek = daysPerWeek, trainingGoals = selectedGoals, equipmentTypes = selectedEquipment, showPrayers = showPrayers, notificationsEnabled = notificationsEnabled, workoutReminderEnabled = workoutReminderEnabled, workoutReminderHour = workoutReminderHour, workoutReminderMinute = workoutReminderMinute, prayerNotificationsEnabled = prayerNotificationsEnabled, prayerNotificationLeadMinutes = prayerNotificationLeadMinutes, streakWarningEnabled = streakWarningEnabled, streakWarningHour = streakWarningHour, streakWarningMinute = streakWarningMinute)
                 if (selectedColor != settings.color) { (context as? Activity)?.recreate() }
                 onDismiss()
             }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
