@@ -66,7 +66,10 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val prefs = context.getSharedPreferences("TheSystemApp", android.content.Context.MODE_PRIVATE)
         if (prefs.getBoolean("quest_reset_pending", false)) {
             prefs.edit().putBoolean("quest_reset_pending", false).apply()
-            resetQuest(force = false)
+            // Guard against double reset: only reset if nextReset is in the past
+            if (appData.quest.nextReset <= System.currentTimeMillis()) {
+                resetQuest(force = false)
+            }
         }
     }
 
@@ -123,6 +126,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             "egypto" -> SunCalc.PrayerMethod.EGYPTO
             "makkah" -> SunCalc.PrayerMethod.MAKKAH
             "karachi" -> SunCalc.PrayerMethod.KARACHI
+            "tehran" -> SunCalc.PrayerMethod.TEHRAN
+            "jafari" -> SunCalc.PrayerMethod.JAFARI
             else -> SunCalc.PrayerMethod.DEFAULT
         }
         
@@ -186,6 +191,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun skipTimedExercise(index: Int) {
         timerJobs[index]?.cancel()
+        val originalAmount = originalTimedAmounts.remove(index)
+        if (originalAmount != null) {
+            val exercises = appData.quest.exercises.toMutableList()
+            if (index in exercises.indices) {
+                exercises[index] = exercises[index].copy(amount = originalAmount)
+                appData = appData.copy(quest = appData.quest.copy(exercises = exercises))
+            }
+        }
         toggleQuestExercise(index, true)
     }
 
@@ -218,6 +231,14 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     fun skipExtraTimedExercise(index: Int) {
         extraTimerJobs[index]?.cancel()
+        val originalAmount = originalExtraTimedAmounts.remove(index)
+        if (originalAmount != null) {
+            val extras = appData.quest.extraExercises.toMutableList()
+            if (index in extras.indices) {
+                extras[index] = extras[index].copy(amount = originalAmount)
+                appData = appData.copy(quest = appData.quest.copy(extraExercises = extras))
+            }
+        }
         toggleExtraExercise(index, true)
     }
 
@@ -273,10 +294,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val displayLevel = min(lvl, 31)
         
         val apGained = if (lvl > oldLevel) {
-            // Calculate AP differently for first 10 levels (faster)
-            val normalLevels = maxOf(0, min(lvl, appData.scaling.fastLevelCap) - oldLevel)
-            val extraLevels = maxOf(0, lvl - appData.scaling.fastLevelCap)
-            (normalLevels + extraLevels) * appData.scaling.apPerLevel
+            (lvl - oldLevel) * appData.scaling.apPerLevel
         } else 0
 
         appData = appData.copy(
@@ -357,6 +375,14 @@ fun usePasscard() {
     }
 
     fun resetQuest(force: Boolean) {
+        // Cancel all running timers to prevent corruption
+        timerJobs.values.forEach { it.cancel() }
+        timerJobs.clear()
+        originalTimedAmounts.clear()
+        extraTimerJobs.values.forEach { it.cancel() }
+        extraTimerJobs.clear()
+        originalExtraTimedAmounts.clear()
+
         if (force) {
             if (appData.quest.completed || appData.quest.usedPasscard) {
                 val newStreak = appData.user.streak + 1
@@ -383,6 +409,12 @@ fun usePasscard() {
                     )
                 )
                 calculateLevelFromTotalXp()
+            } else if (appData.quest.completed || appData.quest.usedPasscard) {
+                // Increment streak on automatic reset when quest was completed
+                appData = appData.copy(
+                    user = appData.user.copy(streak = appData.user.streak + 1)
+                )
+                checkStreakRewards()
             }
             // Reset quest at midnight - but keep habits, prayers, and passcards intact
             appData = appData.copy(
@@ -513,6 +545,11 @@ fun usePasscard() {
         }
     }
 
+    fun updateProfileImage(path: String) {
+        appData = appData.copy(user = appData.user.copy(profileImg = path))
+        saveData()
+    }
+
     fun saveSettings(
         name: String,
         color: String,
@@ -540,8 +577,6 @@ fun usePasscard() {
             ),
             settings = Settings(
                 color = color,
-                showHabits = true,
-                gender = gender,
                 prayerAlgorithm = prayerAlgorithm,
                 difficulty = difficulty,
                 daysPerWeek = daysPerWeek,
@@ -579,7 +614,15 @@ fun usePasscard() {
 
     private fun generateNewQuest() {
         val level = appData.user.level
-        val unlocked = appData.exercises.filter { it.requiredLevel <= level }.toMutableList()
+        val settings = appData.settings
+        val unlocked = appData.exercises.filter { ex ->
+            ex.requiredLevel <= level &&
+            settings.equipmentTypes.contains(ex.equipment) &&
+            (settings.trainingGoals.isEmpty() ||
+             settings.trainingGoals.contains(ex.muscleGroup) ||
+             ex.muscleGroup == "full" ||
+             ex.muscleGroup == "cardio")
+        }.toMutableList()
         val selected = mutableListOf<Exercise>()
         val numExercises = min(4, unlocked.size)
 
@@ -599,11 +642,12 @@ fun usePasscard() {
             QuestExercise(name = ex.name, amount = amount, done = false, timed = ex.timed, muscleGroup = ex.muscleGroup, equipment = ex.equipment)
         }
 
-        // Don't reset habits, prayers - keep them for the day
-        // Only reset quest exercises
-        
+        // Reset habits daily
+        val resetHabits = appData.habits.map { it.copy(done = false) }.toMutableList()
+
         appData = appData.copy(
-            quest = appData.quest.copy(exercises = newQuestExercises, extraExercises = listOf(), completed = false, usedPasscard = false)
+            quest = appData.quest.copy(exercises = newQuestExercises, extraExercises = listOf(), completed = false, usedPasscard = false),
+            habits = resetHabits
         )
         calculatePrayers() // Refresh times for the new day
         saveData()

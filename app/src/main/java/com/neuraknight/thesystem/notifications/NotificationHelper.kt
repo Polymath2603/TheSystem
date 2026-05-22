@@ -64,7 +64,7 @@ object NotificationHelper {
         manager.notify(NOTIFICATION_WORKOUT_REMINDER, notification)
     }
 
-    fun showPrayerAlert(context: Context, prayerName: String) {
+    fun showPrayerAlert(context: Context, prayerName: String, prayerIndex: Int = 0) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val notification = NotificationCompat.Builder(context, CHANNEL_PRAYER)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
@@ -74,7 +74,7 @@ object NotificationHelper {
             .setContentIntent(getMainActivityIntent(context))
             .setAutoCancel(true)
             .build()
-        manager.notify(NOTIFICATION_PRAYER_BASE + prayerName.hashCode() % 5, notification)
+        manager.notify(NOTIFICATION_PRAYER_BASE + prayerIndex, notification)
     }
 
     fun showStreakWarning(context: Context, streak: Int) {

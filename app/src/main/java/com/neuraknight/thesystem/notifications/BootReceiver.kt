@@ -16,6 +16,8 @@ class BootReceiver : BroadcastReceiver() {
             try {
                 Gson().fromJson(json, AppData::class.java)
             } catch (e: Exception) {
+                // Backup corrupted JSON before returning null
+                prefs.edit().putString("app_data_backup", json).apply()
                 null
             }
         } else {

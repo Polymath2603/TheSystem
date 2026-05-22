@@ -59,9 +59,15 @@ object NotificationScheduler {
             if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_MONTH, 1)
         }
 
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent
-        )
+        if (canScheduleExactAlarms(context)) {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent
+            )
+        } else {
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent
+            )
+        }
     }
 
     private fun cancelWorkoutReminder(context: Context) {
@@ -84,6 +90,8 @@ object NotificationScheduler {
             "egypto" -> SunCalc.PrayerMethod.EGYPTO
             "makkah" -> SunCalc.PrayerMethod.MAKKAH
             "karachi" -> SunCalc.PrayerMethod.KARACHI
+            "tehran" -> SunCalc.PrayerMethod.TEHRAN
+            "jafari" -> SunCalc.PrayerMethod.JAFARI
             else -> SunCalc.PrayerMethod.DEFAULT
         }
         val sunTimes = SunCalc.getPrayerTimes(cal, settings.prayerLatitude, settings.prayerLongitude, method)
@@ -108,9 +116,15 @@ object NotificationScheduler {
                     context, REQUEST_PRAYER_BASE + index, intent,
                     PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
                 )
-                alarmManager.setExactAndAllowWhileIdle(
-                    AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent
-                )
+                if (canScheduleExactAlarms(context)) {
+                    alarmManager.setExactAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent
+                    )
+                } else {
+                    alarmManager.setAndAllowWhileIdle(
+                        AlarmManager.RTC_WAKEUP, triggerTime, pendingIntent
+                    )
+                }
             }
         }
 
@@ -147,9 +161,15 @@ object NotificationScheduler {
             set(Calendar.MILLISECOND, 0)
         }
 
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP, midnight.timeInMillis, pendingIntent
-        )
+        if (canScheduleExactAlarms(context)) {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP, midnight.timeInMillis, pendingIntent
+            )
+        } else {
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP, midnight.timeInMillis, pendingIntent
+            )
+        }
     }
 
     private fun cancelPrayerRefresh(context: Context) {
@@ -180,9 +200,15 @@ object NotificationScheduler {
             if (timeInMillis <= System.currentTimeMillis()) add(Calendar.DAY_OF_MONTH, 1)
         }
 
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent
-        )
+        if (canScheduleExactAlarms(context)) {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent
+            )
+        } else {
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP, calendar.timeInMillis, pendingIntent
+            )
+        }
     }
 
     private fun cancelStreakWarning(context: Context) {
@@ -213,9 +239,15 @@ object NotificationScheduler {
             set(Calendar.MILLISECOND, 0)
         }
 
-        alarmManager.setExactAndAllowWhileIdle(
-            AlarmManager.RTC_WAKEUP, midnight.timeInMillis, pendingIntent
-        )
+        if (canScheduleExactAlarms(context)) {
+            alarmManager.setExactAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP, midnight.timeInMillis, pendingIntent
+            )
+        } else {
+            alarmManager.setAndAllowWhileIdle(
+                AlarmManager.RTC_WAKEUP, midnight.timeInMillis, pendingIntent
+            )
+        }
     }
 
     private fun cancelQuestReset(context: Context) {

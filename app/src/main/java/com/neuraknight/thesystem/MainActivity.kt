@@ -58,7 +58,10 @@ class MainActivity : ComponentActivity() {
     private fun checkExactAlarmPermission() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (!NotificationScheduler.canScheduleExactAlarms(this)) {
-                Toast.makeText(this, "Please allow exact alarms for notifications to work properly", Toast.LENGTH_LONG).show()
+                val intent = android.content.Intent(android.provider.Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM).apply {
+                    data = android.net.Uri.parse("package:$packageName")
+                }
+                startActivity(intent)
             }
         }
     }

@@ -101,6 +101,8 @@ fun SettingsDialog(
 
     var imageError by remember { mutableStateOf<String?>(null) }
 
+    var pendingProfileImg by remember { mutableStateOf<String?>(null) }
+
     val pickImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -108,14 +110,15 @@ fun SettingsDialog(
             try {
                 val inputStream = context.contentResolver.openInputStream(it)
                 if (inputStream != null) {
-                    val bitmap = android.graphics.BitmapFactory.decodeStream(inputStream)
-                    inputStream.close()
+                    val bitmap = inputStream.use { stream ->
+                        android.graphics.BitmapFactory.decodeStream(stream)
+                    }
                     if (bitmap != null) {
                         val file = java.io.File(context.filesDir, "profile_image.jpg")
                         java.io.FileOutputStream(file).use { outputStream ->
                             bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, outputStream)
                         }
-                        viewModel.appData.user.profileImg = file.absolutePath
+                        pendingProfileImg = file.absolutePath
                         imageError = null
                     } else {
                         imageError = "Could not decode image"
@@ -389,6 +392,11 @@ fun SettingsDialog(
 
             Button(onClick = {
                 viewModel.saveSettings(name = name, color = selectedColor, gender = gender, prayerAlgorithm = prayerAlgorithm, difficulty = difficulty, daysPerWeek = daysPerWeek, trainingGoals = selectedGoals, equipmentTypes = selectedEquipment, showPrayers = showPrayers, notificationsEnabled = notificationsEnabled, workoutReminderEnabled = workoutReminderEnabled, workoutReminderHour = workoutReminderHour, workoutReminderMinute = workoutReminderMinute, prayerNotificationsEnabled = prayerNotificationsEnabled, prayerNotificationLeadMinutes = prayerNotificationLeadMinutes, streakWarningEnabled = streakWarningEnabled, streakWarningHour = streakWarningHour, streakWarningMinute = streakWarningMinute)
+                // Apply pending profile image through proper state flow
+                pendingProfileImg?.let { path ->
+                    viewModel.updateProfileImage(path)
+                    pendingProfileImg = null
+                }
                 if (selectedColor != settings.color) { (context as? Activity)?.recreate() }
                 onDismiss()
             }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {

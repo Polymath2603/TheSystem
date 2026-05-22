@@ -227,12 +227,31 @@ fun DeadlineInfo(
         Spacer(modifier = Modifier.height(16.dp))
 
         if (!completed && passcards > 0) {
+            var showConfirmDialog by remember { mutableStateOf(false) }
+
             OutlinedButton(
-                onClick = onUsePasscard,
+                onClick = { showConfirmDialog = true },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(4.dp)
             ) {
                 Text("USE PASSCARD - REST DAY ($passcards available)", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+            }
+
+            if (showConfirmDialog) {
+                AlertDialog(
+                    onDismissRequest = { showConfirmDialog = false },
+                    title = { Text("Use Passcard?") },
+                    text = { Text("This will consume 1 passcard to skip today's quest. You have $passcards remaining.") },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            onUsePasscard()
+                            showConfirmDialog = false
+                        }) { Text("Use Passcard") }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showConfirmDialog = false }) { Text("Cancel") }
+                    }
+                )
             }
         }
     }

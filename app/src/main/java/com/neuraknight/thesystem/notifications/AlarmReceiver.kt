@@ -34,8 +34,9 @@ class AlarmReceiver : BroadcastReceiver() {
             }
             TYPE_PRAYER -> {
                 val prayerName = intent.getStringExtra(EXTRA_PRAYER_NAME) ?: return
+                val prayerIndex = intent.getIntExtra(EXTRA_PRAYER_INDEX, 0)
                 if (appData.settings.notificationsEnabled && appData.settings.prayerNotificationsEnabled) {
-                    NotificationHelper.showPrayerAlert(context, prayerName)
+                    NotificationHelper.showPrayerAlert(context, prayerName, prayerIndex)
                 }
             }
             TYPE_STREAK -> {
@@ -69,6 +70,8 @@ class AlarmReceiver : BroadcastReceiver() {
             try {
                 Gson().fromJson(json, AppData::class.java)
             } catch (e: Exception) {
+                // Backup corrupted JSON before returning defaults
+                prefs.edit().putString("app_data_backup", json).apply()
                 AppData()
             }
         } else {

@@ -20,8 +20,8 @@ data class AppData(
 )
 
 data class Prayer(
-    val name: String,
-    val time: String,
+    val name: String = "",
+    val time: String = "",
     var done: Boolean = false,
     val prayerTime: Date? = null
 )
@@ -36,7 +36,6 @@ data class Scaling(
     var baseTime: Int = 10,
     var exponent2: Double = 1.8,
     var baseXP: Int = 1,
-    var exponent: Double = 0.7,
     var exponentFast: Double = 0.3,
     var fastLevelCap: Int = 10,
     var repsProgressSpeed: Int = 60,
@@ -44,23 +43,23 @@ data class Scaling(
 )
 
 data class Exercise(
-    val name: String,
-    val difficulty: Int,
-    val requiredLevel: Int,
-    val baseScale: Double,
-    val xpPerRep: Double,
-    val statGain: StatGain,
+    val name: String = "",
+    val difficulty: Int = 0,
+    val requiredLevel: Int = 0,
+    val baseScale: Double = 1.0,
+    val xpPerRep: Double = 1.0,
+    val statGain: StatGain = StatGain(),
     val timed: Boolean = false,
     val muscleGroup: String = "full",
     val equipment: String = "bodyweight"
 )
 
 data class StatGain(
-    val STR: Double,
-    val AGI: Double,
-    val VIT: Double,
-    val END: Double,
-    val AP: Double
+    val STR: Double = 0.0,
+    val AGI: Double = 0.0,
+    val VIT: Double = 0.0,
+    val END: Double = 0.0,
+    val AP: Double = 0.0
 )
 
 data class User(
@@ -98,10 +97,10 @@ data class Quest(
 )
 
 data class QuestExercise(
-    val name: String,
-    val amount: Int,
+    val name: String = "",
+    val amount: Int = 0,
     var done: Boolean = false,
-    val timed: Boolean,
+    val timed: Boolean = false,
     val muscleGroup: String = "full",
     val equipment: String = "bodyweight"
 )
@@ -114,9 +113,7 @@ data class Habit(
 
 data class Settings(
     var color: String = "blue",
-    var showHabits: Boolean = true,
     var showPrayers: Boolean = true,
-    var gender: String = "male",
     var prayerAlgorithm: String = "default",
     var prayerLatitude: Double = 51.5074,
     var prayerLongitude: Double = -0.1278,

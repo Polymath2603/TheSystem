@@ -26,7 +26,9 @@ object SunCalc {
         ISNA,         // Islamic Society of North America -15 degrees
         EGYPTO,       // Egyptian General Authority -19.5 degrees
         MAKKAH,       // Umm Al-Qura University -18.5 degrees
-        KARACHI       // Karachi -18 degrees
+        KARACHI,      // Karachi -18 degrees
+        TEHRAN,       // Tehran -17.7 degrees Fajr, -14 degrees Isha
+        JAFARI        // Jafari -16 degrees Fajr, -14 degrees Isha
     }
 
     private fun getFajrAngle(method: PrayerMethod): Double = when (method) {
@@ -36,6 +38,8 @@ object SunCalc {
         PrayerMethod.EGYPTO -> -19.5
         PrayerMethod.MAKKAH -> -18.5
         PrayerMethod.KARACHI -> -18.0
+        PrayerMethod.TEHRAN -> -17.7
+        PrayerMethod.JAFARI -> -16.0
     }
 
     private fun getIshaAngle(method: PrayerMethod): Double = when (method) {
@@ -45,6 +49,8 @@ object SunCalc {
         PrayerMethod.EGYPTO -> -17.5
         PrayerMethod.MAKKAH -> -18.5
         PrayerMethod.KARACHI -> -18.0
+        PrayerMethod.TEHRAN -> -14.0
+        PrayerMethod.JAFARI -> -14.0
     }
 
     fun getPrayerTimes(date: Calendar, lat: Double, lng: Double, method: PrayerMethod = PrayerMethod.DEFAULT, altitude: Double = 0.0): SunTimes {

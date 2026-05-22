@@ -16,7 +16,6 @@ import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Mosque
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material.icons.filled.Terminal
 import androidx.compose.material3.*
 import androidx.compose.material3.TabRowDefaults.tabIndicatorOffset
 import androidx.compose.runtime.*
@@ -51,7 +50,7 @@ fun MainScreen(viewModel: MainViewModel) {
     val appData = viewModel.appData
     var selectedTabIndex by remember { mutableStateOf(0) }
 
-    val tabs = remember(appData.settings.showHabits, appData.settings.showPrayers) {
+    val tabs = remember(appData.settings.showPrayers) {
         buildList {
             add(TabItem("Workout", Icons.Default.FitnessCenter))
             if (appData.settings.showPrayers) add(TabItem("Prayers", Icons.Default.Mosque))
