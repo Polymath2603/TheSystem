@@ -109,10 +109,11 @@ class SystemSimulationTest {
         val xp11 = calculateXpForLevel(11, scaling) // jumps to slow progression
 
         assertTrue("Level 1 XP should be > 0", xp1 > 0)
-        // With baseXP=1 and exponentFast=0.3, levels 1-9 all cost 1 XP (floor)
-        // Level 10 costs 2, level 11+ jumps dramatically
-        assertTrue("Level 10 XP should be >= Level 1", xp10 >= xp1)
-        assertTrue("Level 11 XP should be >> Level 10 (slow progression)", xp11 > xp10 * 10)
+        // Fast progression: levels 1-10 scale via exponentFast=0.8
+        assertTrue("Level 9 XP should be > Level 1", xp9 > xp1)
+        assertTrue("Level 10 XP should be > Level 9", xp10 > xp9)
+        // Slow progression kicks in at level 11 — big jump
+        assertTrue("Level 11 XP should be > Level 10 (slow progression)", xp11 > xp10 * 2)
         println("XP Progression: L1=$xp1, L9=$xp9, L10=$xp10, L11=$xp11")
     }
 
@@ -120,10 +121,10 @@ class SystemSimulationTest {
     fun testXpProgression_slowLevels() {
         val scaling = Scaling()
         // Slow progression starts at level 11 (above fastLevelCap=10)
-        val xp10 = calculateXpForLevel(10, scaling) // 2 XP (fast)
-        val xp11 = calculateXpForLevel(11, scaling) // ~112 XP (slow kicks in)
-        val xp20 = calculateXpForLevel(20, scaling) // ~1010 XP
-        val xp31 = calculateXpForLevel(31, scaling) // ~2210 XP
+        val xp10 = calculateXpForLevel(10, scaling) // ~50 XP (fast)
+        val xp11 = calculateXpForLevel(11, scaling) // ~125 XP (slow kicks in)
+        val xp20 = calculateXpForLevel(20, scaling) // ~2015 XP
+        val xp31 = calculateXpForLevel(31, scaling) // ~6525 XP
 
         assertTrue("Level 11 XP should be > Level 10", xp11 > xp10)
         assertTrue("Level 20 XP should be > Level 11", xp20 > xp11)
@@ -826,7 +827,7 @@ class SystemSimulationTest {
     fun testModelDefaults_scaling() {
         val s = Scaling()
         // exponent should be removed
-        assertEquals(0.3, s.exponentFast, 0.001)
+        assertEquals(0.8, s.exponentFast, 0.001)
         assertEquals(10, s.fastLevelCap)
         assertEquals(5, s.apPerLevel)
     }

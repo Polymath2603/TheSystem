@@ -35,8 +35,8 @@ data class Scaling(
     var exponent3: Double = 1.35,
     var baseTime: Int = 10,
     var exponent2: Double = 1.8,
-    var baseXP: Int = 1,
-    var exponentFast: Double = 0.3,
+    var baseXP: Int = 8,
+    var exponentFast: Double = 0.8,
     var fastLevelCap: Int = 10,
     var repsProgressSpeed: Int = 60,
     var apPerLevel: Int = 5

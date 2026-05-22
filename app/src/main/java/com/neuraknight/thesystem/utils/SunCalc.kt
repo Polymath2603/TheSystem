@@ -55,36 +55,38 @@ object SunCalc {
 
     fun getPrayerTimes(date: Calendar, lat: Double, lng: Double, method: PrayerMethod = PrayerMethod.DEFAULT, altitude: Double = 0.0): SunTimes {
         val dayOfYear = date.get(Calendar.DAY_OF_YEAR).toDouble()
-        
-        // Simplified Solar Position Math
-        val solarNoon = getSolarNoon(dayOfYear, lng, date)
+
+        // Solar noon and sun position in UTC hours
+        val solarNoon = getSolarNoon(dayOfYear, lng)
         val declination = getSolarDeclination(dayOfYear)
-        
+
         val fajrAngle = getFajrAngle(method)
         val ishaAngle = getIshaAngle(method)
-        
+
         val fajrTime = getTimeByAngle(solarNoon, lat, declination, fajrAngle, true)
         val sunriseTime = getTimeByAngle(solarNoon, lat, declination, -0.833, true)
         val maghribTime = getTimeByAngle(solarNoon, lat, declination, -0.833, false)
         val ishaTime = getTimeByAngle(solarNoon, lat, declination, ishaAngle, false)
-        
+
         // Asr calculation (Shafi'i: shadow factor = 1)
         val asrTime = getAsrTime(solarNoon, lat, declination, 1.0)
 
+        // Create Date objects from UTC hours — SimpleDateFormat in the app
+        // will convert these to the device's local timezone for display
         return SunTimes(
-            fajr = dateFromHours(date, fajrTime),
-            sunrise = dateFromHours(date, sunriseTime),
-            dhuhr = dateFromHours(date, solarNoon),
-            asr = dateFromHours(date, asrTime),
-            maghrib = dateFromHours(date, maghribTime),
-            isha = dateFromHours(date, ishaTime)
+            fajr = dateFromHoursUTC(date, fajrTime),
+            sunrise = dateFromHoursUTC(date, sunriseTime),
+            dhuhr = dateFromHoursUTC(date, solarNoon),
+            asr = dateFromHoursUTC(date, asrTime),
+            maghrib = dateFromHoursUTC(date, maghribTime),
+            isha = dateFromHoursUTC(date, ishaTime)
         )
     }
 
-    private fun getSolarNoon(day: Double, lng: Double, date: Calendar): Double {
-        val timezone = date.timeZone.rawOffset / 3600000.0
+    private fun getSolarNoon(day: Double, lng: Double): Double {
+        // Solar noon in UTC fractional hours
         val eqt = getEquationOfTime(day)
-        return 12.0 + timezone - (lng / 15.0) - (eqt / 60.0)
+        return 12.0 - (lng / 15.0) - (eqt / 60.0)
     }
 
     private fun getEquationOfTime(day: Double): Double {
@@ -117,14 +119,19 @@ object SunCalc {
         return getTimeByAngle(noon, lat, decl, asrAngle, false)
     }
 
-    private fun dateFromHours(base: Calendar, hours: Double?): Date? {
-        if (hours == null) return null
-        val cal = base.clone() as Calendar
-        val h = floor(hours).toInt()
-        val m = floor((hours - h) * 60.0).toInt()
+    private fun dateFromHoursUTC(base: Calendar, utcHours: Double?): Date? {
+        if (utcHours == null) return null
+        // Create a UTC calendar from the base date
+        val cal = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
+        cal.set(Calendar.YEAR, base.get(Calendar.YEAR))
+        cal.set(Calendar.MONTH, base.get(Calendar.MONTH))
+        cal.set(Calendar.DAY_OF_MONTH, base.get(Calendar.DAY_OF_MONTH))
+        val h = floor(utcHours).toInt()
+        val m = floor((utcHours - h) * 60.0).toInt()
         cal.set(Calendar.HOUR_OF_DAY, h)
         cal.set(Calendar.MINUTE, m)
         cal.set(Calendar.SECOND, 0)
+        cal.set(Calendar.MILLISECOND, 0)
         return cal.time
     }
 }
