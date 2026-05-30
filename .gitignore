@@ -25,3 +25,9 @@ obj/
 # Sensitive
 google-services.json
 firebase.json
+
+# Kotlin compiler
+.kotlin/
+
+# Navigation preview
+.nav-docs/
