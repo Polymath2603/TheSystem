@@ -7,6 +7,7 @@ import androidx.compose.runtime.setValue
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.neuraknight.thesystem.data.models.AppData
+import com.neuraknight.thesystem.data.models.DaySnapshot
 import com.neuraknight.thesystem.data.models.Exercise
 import com.neuraknight.thesystem.data.models.Habit
 import com.neuraknight.thesystem.data.models.Prayer
@@ -83,22 +84,38 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.saveData(appData)
     }
 
-    fun completeSetup(name: String, workoutLevel: String, goal: String, color: String, gender: String = "male", showPrayers: Boolean = true, showHabits: Boolean = true, profileImagePath: String = "") {
+    fun completeSetup(name: String, goal: String, color: String, repCount: Int, gender: String = "male", showPrayers: Boolean = true, showHabits: Boolean = true, profileImagePath: String = "") {
         val user = appData.user.copy()
         val scaling = appData.scaling.copy()
-        var startingLevel = 0
-        if (workoutLevel == "intermediate") startingLevel = 5
-        if (workoutLevel == "advanced") startingLevel = 10
 
         var progressSpeed = 60
         if (goal == "quick") progressSpeed = 30
         if (goal == "longterm") progressSpeed = 90
+        scaling.repsProgressSpeed = progressSpeed
+
+        // Map the user's rep capability to a starting level using the inverse of
+        // the exercise amount formula: amount = baseReps + (maxReps - baseReps) * (level/speed)^exp
+        val base = scaling.baseReps
+        val maxV = scaling.maxReps
+        val exp = scaling.exponent3
+        val speed = scaling.repsProgressSpeed.toDouble()
+        val unclampedLevel = if (repCount > base) {
+            val fraction = (repCount - base).toDouble() / (maxV - base).toDouble()
+            (speed * fraction.pow(1.0 / exp)).toInt()
+        } else 0
+        val startingLevel = unclampedLevel.coerceAtMost(31)
+
+        // Initialize total XP so calculateLevelFromTotalXp finds this level
+        var totalXp = 0.0
+        for (lvl in 1..startingLevel) {
+            totalXp += calculateXpForLevel(lvl)
+        }
 
         user.name = name.ifEmpty { "Unknown" }
         user.gender = gender
         user.level = startingLevel
+        user.totalXp = totalXp
         if (profileImagePath.isNotEmpty()) user.profileImg = profileImagePath
-        scaling.repsProgressSpeed = progressSpeed
 
         if (startingLevel > 0) {
             val multiplier = 1 + startingLevel * 0.1
@@ -422,6 +439,7 @@ fun usePasscard() {
 
         if (force) {
             if (appData.quest.completed || appData.quest.usedPasscard) {
+                recordDailySnapshot()
                 val newStreak = appData.user.streak + 1
                 appData = appData.copy(
                     user = appData.user.copy(streak = newStreak),
@@ -453,6 +471,7 @@ fun usePasscard() {
                 )
                 checkStreakRewards()
             }
+            recordDailySnapshot()
             // Reset quest at midnight - but keep habits, prayers, and passcards intact
             appData = appData.copy(
                 quest = appData.quest.copy(
@@ -464,6 +483,29 @@ fun usePasscard() {
             generateNewQuest()
         }
         NotificationScheduler.scheduleQuestReset(getApplication())
+    }
+
+    private fun recordDailySnapshot() {
+        val sdf = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+        val today = sdf.format(java.util.Date())
+        val user = appData.user
+        val snapshot = DaySnapshot(
+            date = today,
+            totalXp = user.totalXp,
+            level = user.level,
+            streak = user.streak,
+            questCompleted = appData.quest.completed,
+            stats = user.stats
+        )
+        val history = appData.history.toMutableList()
+        val existingIdx = history.indexOfLast { it.date == today }
+        if (existingIdx >= 0) {
+            history[existingIdx] = snapshot
+        } else {
+            history.add(snapshot)
+        }
+        appData = appData.copy(history = history.takeLast(200))
+        saveData()
     }
 
     private fun calculateNextResetMidnight(): Long {
@@ -524,16 +566,16 @@ fun usePasscard() {
             ex.requiredLevel <= level && 
             settings.equipmentTypes.contains(ex.equipment) &&
             (settings.trainingGoals.isEmpty() || 
-             settings.trainingGoals.contains(ex.muscleGroup) ||
-             ex.muscleGroup == "full" ||
-             ex.muscleGroup == "cardio")
+             ex.muscleGroups.any { settings.trainingGoals.contains(it) } ||
+             ex.muscleGroups.contains("full") ||
+             ex.muscleGroups.contains("cardio"))
         }
         
         val numExtra = (2..3).random()
         val selected = available.shuffled().take(numExtra).map { ex ->
             val base = if (ex.timed) appData.scaling.baseTime else appData.scaling.baseReps
             val amount = (base * 0.3).toInt().coerceAtLeast(5)
-            QuestExercise(name = ex.name, amount = amount, done = false, timed = ex.timed, muscleGroup = ex.muscleGroup, equipment = ex.equipment)
+            QuestExercise(name = ex.name, amount = amount, done = false, timed = ex.timed, muscleGroups = ex.muscleGroups, equipment = ex.equipment)
         }
         
         appData = appData.copy(
@@ -616,38 +658,26 @@ fun usePasscard() {
         val todayIndex = if (today == 0) 7 else today // convert Sun=1 to 7
         val isWorkoutDay = settings.workoutDays.isEmpty() || settings.workoutDays.contains(todayIndex)
 
-        val baseCount = when {
-            !isWorkoutDay -> 1 // rest day: 1 exercise maintenance
-            settings.difficulty == "intermediate" -> 3
-            settings.difficulty == "advanced" -> 4
-            else -> 2
-        }
-        val levelBonus = if (isWorkoutDay) level / 5 else 0
-        val numExercises = min(baseCount + levelBonus, 8).coerceAtMost(appData.exercises.size)
-
-        val difficultyMultiplier = when (settings.difficulty) {
-            "advanced" -> 1.2
-            "beginner" -> 0.8
-            else -> 1.0
-        }
+        val numExercises = when {
+            !isWorkoutDay -> 1
+            else -> (level / 5 + 2).coerceIn(2, 8)
+        }.coerceAtMost(appData.exercises.size)
 
         // Prioritize exercises matching training goals; cap full/cardio at 1
         val goals = settings.trainingGoals
         val filtered = appData.exercises.filter { ex ->
             ex.requiredLevel <= level &&
             settings.equipmentTypes.contains(ex.equipment) &&
-            (goals.isEmpty() ||
-             goals.contains(ex.muscleGroup) ||
-             ex.muscleGroup == "full" ||
-             ex.muscleGroup == "cardio")
+             (goals.isEmpty() ||
+              ex.muscleGroups.any { goals.contains(it) } ||
+              ex.muscleGroups.contains("full") ||
+              ex.muscleGroups.contains("cardio"))
         }
-        val (fullCardio, others) = filtered.partition { it.muscleGroup == "full" || it.muscleGroup == "cardio" }
+        val (fullCardio, others) = filtered.partition { it.muscleGroups.contains("full") || it.muscleGroups.contains("cardio") }
         val capped = others + fullCardio.take(1)
         val sorted = capped.sortedByDescending { ex ->
             var score = 0
-            if (goals.contains(ex.muscleGroup)) score += 10
-            if (ex.difficulty <= 3 && settings.difficulty == "beginner") score += 5
-            if (ex.difficulty >= 4 && settings.difficulty == "advanced") score += 5
+            if (ex.muscleGroups.any { goals.contains(it) }) score += 10
             score
         }
 
@@ -659,8 +689,8 @@ fun usePasscard() {
             val exp = if (ex.timed) appData.scaling.exponent2 else appData.scaling.exponent3
             val fraction = (level.toDouble() / appData.scaling.repsProgressSpeed).pow(exp)
             val rawAmount = floor(ex.baseScale * (base + (maxV - base) * fraction))
-            val amount = min(maxV.toDouble(), rawAmount * difficultyMultiplier).toInt().coerceAtLeast(1)
-            QuestExercise(name = ex.name, amount = amount, done = false, timed = ex.timed, muscleGroup = ex.muscleGroup, equipment = ex.equipment)
+            val amount = min(maxV.toDouble(), rawAmount).toInt().coerceAtLeast(1)
+            QuestExercise(name = ex.name, amount = amount, done = false, timed = ex.timed, muscleGroups = ex.muscleGroups, equipment = ex.equipment)
         }
 
         val resetHabits = appData.habits.map { it.copy(done = false) }.toMutableList()

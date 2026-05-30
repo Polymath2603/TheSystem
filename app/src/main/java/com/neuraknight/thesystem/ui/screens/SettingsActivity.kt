@@ -76,7 +76,7 @@ private fun SettingsScreen(
     var selectedColor by remember { mutableStateOf(initialData.settings.color) }
     var gender by remember { mutableStateOf(initialData.user.gender) }
     var prayerAlgorithm by remember { mutableStateOf(initialData.settings.prayerAlgorithm) }
-    var difficulty by remember { mutableStateOf(initialData.settings.difficulty) }
+
     var workoutDays by remember { mutableStateOf(initialData.settings.workoutDays.toMutableList()) }
     var selectedGoals by remember { mutableStateOf(initialData.settings.trainingGoals.toMutableList()) }
     var selectedEquipment by remember { mutableStateOf(initialData.settings.equipmentTypes.toMutableList()) }
@@ -165,10 +165,9 @@ private fun SettingsScreen(
         "jafari" to "Jafari (Wilayah)"
     )
 
-    val difficultyOptions = listOf("beginner", "intermediate", "advanced")
     val dayLabels = listOf("Mon" to 1, "Tue" to 2, "Wed" to 3, "Thu" to 4, "Fri" to 5, "Sat" to 6, "Sun" to 7)
     val goalOptions = listOf("strength", "cardio", "durability", "biceps", "triceps", "legs", "chest", "back", "shoulders", "abs")
-    val equipmentOptions = listOf("bodyweight", "dumbbell", "bar")
+    val equipmentOptions = listOf("bodyweight", "dumbbell", "bar", "kettlebell", "resistance_band", "cable", "bench", "plate")
 
     Scaffold(
         topBar = {
@@ -307,14 +306,6 @@ private fun SettingsScreen(
             Spacer(modifier = Modifier.height(16.dp))
 
             SettingsSection(title = "Training") {
-                Text("Difficulty", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    difficultyOptions.forEach { diff ->
-                        FilterChip(selected = difficulty == diff, onClick = { difficulty = diff }, label = { Text(diff.replaceFirstChar { it.uppercase() }) }, leadingIcon = if (difficulty == diff) {{ Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }} else null, modifier = Modifier.weight(1f))
-                    }
-                }
-                Spacer(modifier = Modifier.height(16.dp))
                 Text("Workout Days", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
                 Spacer(modifier = Modifier.height(8.dp))
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
@@ -469,7 +460,6 @@ private fun SettingsScreen(
                     settings = Settings(
                         color = selectedColor,
                         prayerAlgorithm = prayerAlgorithm,
-                        difficulty = difficulty,
                         workoutDays = workoutDays,
                         trainingGoals = selectedGoals,
                         equipmentTypes = selectedEquipment,

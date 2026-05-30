@@ -27,13 +27,12 @@ import com.neuraknight.thesystem.ui.screens.common.DropdownSelector
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SetupScreen(onSetupComplete: (String, String, String, String, String, Boolean, Boolean, String) -> Unit) {
+fun SetupScreen(onSetupComplete: (String, String, String, Int, String, Boolean, Boolean, String) -> Unit) {
     val context = LocalContext.current
     var name by remember { mutableStateOf("") }
-    val workoutOptions = listOf("beginner", "intermediate", "advanced")
-    var workoutLevel by remember { mutableStateOf(workoutOptions[0]) }
     val goalOptions = listOf("balanced", "quick", "longterm")
     var goal by remember { mutableStateOf(goalOptions[0]) }
+    var repCount by remember { mutableStateOf("") }
     val colorOptions = listOf("blue", "red", "green", "yellow", "purple", "cyan", "grey")
     var color by remember { mutableStateOf(colorOptions[0]) }
     var gender by remember { mutableStateOf("male") }
@@ -114,7 +113,16 @@ fun SetupScreen(onSetupComplete: (String, String, String, String, String, Boolea
         }
         Spacer(modifier = Modifier.height(12.dp))
 
-        DropdownSelector(label = "Workout Level", options = workoutOptions, selected = workoutLevel, onSelected = { workoutLevel = it })
+        OutlinedTextField(
+            value = repCount,
+            onValueChange = { repCount = it.filter { c -> c.isDigit() }.take(3) },
+            label = { Text("How many pushups can you do in one set?") },
+            modifier = Modifier.fillMaxWidth(),
+            singleLine = true,
+            suffix = { Text("reps") }
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text("This sets your starting level — don't guess, do a quick max set!", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
         Spacer(modifier = Modifier.height(12.dp))
 
         DropdownSelector(label = "Goals", options = goalOptions, selected = goal, onSelected = { goal = it })
@@ -124,7 +132,7 @@ fun SetupScreen(onSetupComplete: (String, String, String, String, String, Boolea
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = { onSetupComplete(name, workoutLevel, goal, color, gender, showPrayers, showHabits, pendingProfileImg) },
+            onClick = { onSetupComplete(name, goal, color, repCount.toIntOrNull() ?: 0, gender, showPrayers, showHabits, pendingProfileImg) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp)
         ) {

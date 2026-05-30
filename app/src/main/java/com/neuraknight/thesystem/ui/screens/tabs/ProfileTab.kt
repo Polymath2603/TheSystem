@@ -3,6 +3,7 @@ package com.neuraknight.thesystem.ui.screens.tabs
 import android.content.Intent
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -17,11 +18,20 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.neuraknight.thesystem.data.models.DaySnapshot
 import com.neuraknight.thesystem.ui.screens.SettingsActivity
 import com.neuraknight.thesystem.ui.viewmodel.MainViewModel
 import kotlinx.coroutines.Dispatchers
@@ -268,6 +278,12 @@ fun ProfileTab(viewModel: MainViewModel) {
                 Text("Settings", fontWeight = FontWeight.Bold)
             }
         }
+
+        // Progress Section
+        item {
+            Spacer(modifier = Modifier.height(24.dp))
+            ProgressSection(history = viewModel.appData.history)
+        }
     }
 }
 
@@ -323,6 +339,364 @@ fun StatUpgradeRow(name: String, value: Int, canUpgrade: Boolean, onUpgrade: () 
             ) {
                 Text("+", fontWeight = FontWeight.Bold)
             }
+        }
+    }
+}
+
+@Composable
+fun ProgressSection(history: List<DaySnapshot>) {
+    if (history.isEmpty()) return
+
+    var selectedRange by remember { mutableStateOf(14) }
+    val ranges = listOf(7, 14, 30, 90)
+
+    val filtered = remember(history, selectedRange) {
+        history.takeLast(selectedRange)
+    }
+
+    Text(
+        text = "PROGRESS",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.Bold,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.padding(bottom = 8.dp)
+    )
+
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        ranges.forEach { range ->
+            FilterChip(
+                selected = selectedRange == range,
+                onClick = { selectedRange = range },
+                label = { Text("${range}d") }
+            )
+        }
+    }
+
+    Spacer(modifier = Modifier.height(12.dp))
+
+    LineChartCard(title = "Total XP", data = filtered.map { it.totalXp })
+    LineChartCard(title = "Level", data = filtered.map { it.level.toDouble() })
+    LineChartCard(title = "Streak", data = filtered.map { it.streak.toDouble() })
+    ColumnChartCard(
+        title = "Quest Completion",
+        data = filtered.map { if (it.questCompleted) 1.0 else 0.0 }
+    )
+    MultiLineChartCard(
+        title = "Attributes",
+        seriesData = listOf(
+            filtered.map { it.stats.STR },
+            filtered.map { it.stats.AGI },
+            filtered.map { it.stats.VIT },
+            filtered.map { it.stats.END }
+        ),
+        seriesLabels = listOf("STR", "AGI", "VIT", "END"),
+        seriesColors = listOf(
+            Color(0xFFE53935),
+            Color(0xFF1E88E5),
+            Color(0xFF43A047),
+            Color(0xFFFB8C00)
+        )
+    )
+}
+
+@Composable
+fun LineChartCard(title: String, data: List<Double>) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            if (data.isNotEmpty()) {
+                CanvasLineChart(
+                    data = data,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(140.dp),
+                    lineColor = MaterialTheme.colorScheme.primary
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(140.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No data",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ColumnChartCard(title: String, data: List<Double>) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            if (data.isNotEmpty()) {
+                CanvasColumnChart(
+                    data = data,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(140.dp)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(140.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No data",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun MultiLineChartCard(
+    title: String,
+    seriesData: List<List<Double>>,
+    seriesLabels: List<String>,
+    seriesColors: List<Color>
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(bottom = 12.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Text(
+                text = title,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                seriesLabels.forEachIndexed { i, label ->
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(8.dp)
+                                .background(
+                                    seriesColors.getOrElse(i) { MaterialTheme.colorScheme.primary },
+                                    RoundedCornerShape(2.dp)
+                                )
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        Text(
+                            text = label,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            val hasData = seriesData.isNotEmpty() && seriesData.all { it.isNotEmpty() }
+            if (hasData) {
+                CanvasMultiLineChart(
+                    seriesData = seriesData,
+                    seriesColors = seriesColors,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(160.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No data",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun CanvasLineChart(
+    data: List<Double>,
+    modifier: Modifier = Modifier,
+    lineColor: Color = MaterialTheme.colorScheme.primary
+) {
+    if (data.isEmpty()) return
+
+    val minVal = data.min()
+    val maxVal = data.max()
+    val range = (maxVal - minVal).coerceAtLeast(1.0)
+    val paint = remember {
+        android.graphics.Paint().apply {
+            color = android.graphics.Color.WHITE
+            textSize = 28f
+            isAntiAlias = true
+        }
+    }
+    val gridColor = Color.White.copy(alpha = 0.1f)
+
+    Canvas(modifier = modifier.padding(start = 4.dp, end = 4.dp, bottom = 20.dp)) {
+        val w = size.width
+        val h = size.height
+        val stepX = w / (data.size - 1).coerceAtLeast(1)
+
+        // Grid lines
+        for (i in 0..4) {
+            val y = h * i / 4
+            drawLine(gridColor, Offset(0f, y), Offset(w, y), strokeWidth = 0.5.dp.toPx())
+        }
+
+        // Line path
+        val path = Path()
+        data.forEachIndexed { i, value ->
+            val x = i * stepX
+            val y = h - ((value - minVal) / range * h).toFloat()
+            if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+        }
+
+        drawPath(path, color = lineColor, style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
+
+        // Area fill
+        val fillPath = Path().apply {
+            addPath(path)
+            lineTo((data.size - 1) * stepX, h)
+            lineTo(0f, h)
+            close()
+        }
+        drawPath(fillPath, color = lineColor.copy(alpha = 0.1f))
+
+        // Data points
+        data.forEachIndexed { i, value ->
+            val x = i * stepX
+            val y = h - ((value - minVal) / range * h).toFloat()
+            drawCircle(color = lineColor, radius = 2.5.dp.toPx(), center = Offset(x, y))
+        }
+
+        // Min/Max labels
+        drawContext.canvas.nativeCanvas.drawText(
+            "${maxVal.toInt()}",
+            0f,
+            24f,
+            paint
+        )
+        drawContext.canvas.nativeCanvas.drawText(
+            "${minVal.toInt()}",
+            0f,
+            h + 40f,
+            paint
+        )
+    }
+}
+
+@Composable
+fun CanvasColumnChart(
+    data: List<Double>,
+    modifier: Modifier = Modifier
+) {
+    if (data.isEmpty()) return
+
+    val gridColor = Color.White.copy(alpha = 0.08f)
+
+    Canvas(modifier = modifier.padding(start = 4.dp, end = 4.dp, bottom = 4.dp)) {
+        val w = size.width
+        val h = size.height
+        val n = data.size
+        val barW = (w / n) * 0.6f
+        val gap = (w / n) * 0.4f
+
+        data.forEachIndexed { i, value ->
+            val x = i * (barW + gap) + gap / 2
+            val barH = value.toFloat() * h
+            val color = if (value > 0.5) Color(0xFF43A047) else Color(0xFFE53935)
+            drawRect(
+                color = color,
+                topLeft = Offset(x, h - barH),
+                size = androidx.compose.ui.geometry.Size(barW, barH)
+            )
+        }
+    }
+}
+
+@Composable
+fun CanvasMultiLineChart(
+    seriesData: List<List<Double>>,
+    seriesColors: List<Color>,
+    modifier: Modifier = Modifier
+) {
+    if (seriesData.isEmpty() || seriesData.first().isEmpty()) return
+
+    var globalMin = Double.MAX_VALUE
+    var globalMax = Double.MIN_VALUE
+    seriesData.forEach { series ->
+        series.forEach { v ->
+            if (v < globalMin) globalMin = v
+            if (v > globalMax) globalMax = v
+        }
+    }
+    val range = (globalMax - globalMin).coerceAtLeast(1.0)
+    val gridColor = Color.White.copy(alpha = 0.08f)
+    val defaultColor = MaterialTheme.colorScheme.primary
+
+    Canvas(modifier = modifier.padding(start = 4.dp, end = 4.dp, bottom = 4.dp)) {
+        val w = size.width
+        val h = size.height
+        val n = seriesData.first().size
+        val stepX = w / (n - 1).coerceAtLeast(1)
+
+        // Grid
+        for (i in 0..4) {
+            val y = h * i / 4
+            drawLine(gridColor, Offset(0f, y), Offset(w, y), strokeWidth = 0.5.dp.toPx())
+        }
+
+        seriesData.forEachIndexed { si, series ->
+            val color = seriesColors.getOrElse(si) { defaultColor }
+            val path = Path()
+            series.forEachIndexed { i, value ->
+                val x = i * stepX
+                val y = h - ((value - globalMin) / range * h).toFloat()
+                if (i == 0) path.moveTo(x, y) else path.lineTo(x, y)
+            }
+            drawPath(path, color = color, style = Stroke(width = 2.dp.toPx(), cap = StrokeCap.Round, join = StrokeJoin.Round))
         }
     }
 }

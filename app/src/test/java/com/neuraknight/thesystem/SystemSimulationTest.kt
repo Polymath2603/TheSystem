@@ -56,9 +56,9 @@ class SystemSimulationTest {
             ex.requiredLevel <= level &&
             equipmentTypes.contains(ex.equipment) &&
             (trainingGoals.isEmpty() ||
-             trainingGoals.contains(ex.muscleGroup) ||
-             ex.muscleGroup == "full" ||
-             ex.muscleGroup == "cardio")
+             ex.muscleGroups.any { trainingGoals.contains(it) } ||
+             ex.muscleGroups.contains("full") ||
+             ex.muscleGroups.contains("cardio"))
         }.toMutableList()
         val selected = mutableListOf<Exercise>()
         val numExercises = min(4, unlocked.size)
@@ -74,7 +74,7 @@ class SystemSimulationTest {
             val exp = if (ex.timed) scaling.exponent2 else scaling.exponent3
             val fraction = (level.toDouble() / scaling.repsProgressSpeed).pow(exp)
             val amount = min(maxV.toDouble(), floor(ex.baseScale * (base + (maxV - base) * fraction))).toInt()
-            QuestExercise(name = ex.name, amount = amount, done = false, timed = ex.timed, muscleGroup = ex.muscleGroup, equipment = ex.equipment)
+            QuestExercise(name = ex.name, amount = amount, done = false, timed = ex.timed, muscleGroups = ex.muscleGroups, equipment = ex.equipment)
         }
     }
 
@@ -296,8 +296,8 @@ class SystemSimulationTest {
         val chestFocus = generateQuestExercises(exercises, 10, scaling, listOf("bodyweight"), listOf("chest"))
         chestFocus.forEach { qe ->
             val ex = exercises.find { it.name == qe.name }!!
-            assertTrue("Expected chest or full, got ${ex.muscleGroup}",
-                ex.muscleGroup == "chest" || ex.muscleGroup == "full" || ex.muscleGroup == "cardio")
+            assertTrue("Expected chest, arms, full, or cardio, got ${ex.muscleGroups}",
+                ex.muscleGroups.any { it in listOf("chest", "arms", "full", "cardio") })
         }
         println("Chest-focus quest: ${chestFocus.map { "${it.name}(${it.amount})" }}")
     }
@@ -741,7 +741,7 @@ class SystemSimulationTest {
         }
         val bonus = available.shuffled().take(3).map { ex ->
             val amount = (if (ex.timed) scaling.baseTime else scaling.baseReps * 0.3).toInt().coerceAtLeast(5)
-            QuestExercise(name = ex.name, amount = amount, done = false, timed = ex.timed, muscleGroup = ex.muscleGroup, equipment = ex.equipment)
+            QuestExercise(name = ex.name, amount = amount, done = false, timed = ex.timed, muscleGroups = ex.muscleGroups, equipment = ex.equipment)
         }
         val bonusXp = calculateExerciseXp(bonus, exercises) * 0.5 // 50% for bonus
         totalXp += bonusXp
@@ -820,7 +820,7 @@ class SystemSimulationTest {
         assertEquals(1.0, ex.baseScale, 0.001)
         assertEquals(1.0, ex.xpPerRep, 0.001)
         assertFalse(ex.timed)
-        assertEquals("full", ex.muscleGroup)
+        assertEquals(listOf("full"), ex.muscleGroups)
         assertEquals("bodyweight", ex.equipment)
     }
 
@@ -850,7 +850,7 @@ class SystemSimulationTest {
         assertEquals(0, qe.amount)
         assertFalse(qe.done)
         assertFalse(qe.timed)
-        assertEquals("full", qe.muscleGroup)
+        assertEquals(listOf("full"), qe.muscleGroups)
         assertEquals("bodyweight", qe.equipment)
     }
 
