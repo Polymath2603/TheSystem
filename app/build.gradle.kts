@@ -3,6 +3,20 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
 }
+
+val gitCommitCount by lazy {
+    try {
+        Runtime.getRuntime().exec(arrayOf("git", "rev-list", "--count", "HEAD"))
+            .inputStream.bufferedReader().readText().trim().toInt()
+    } catch (_: Exception) { 23 }
+}
+
+val versionPrefix by lazy {
+    try {
+        File(rootProject.projectDir, "version.txt").readText().trim()
+    } catch (_: Exception) { "1.0" }
+}
+
 android {
     namespace = "com.neuraknight.thesystem"
     compileSdk = 36
@@ -12,8 +26,8 @@ android {
         applicationId = "com.neuraknight.thesystem"
         minSdk = 24
         targetSdk = 36
-        versionCode = 13
-        versionName = "1.3"
+        versionCode = gitCommitCount
+        versionName = "$versionPrefix-build.$gitCommitCount"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
