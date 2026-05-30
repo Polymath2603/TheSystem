@@ -39,12 +39,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     private val timerJobs = mutableMapOf<Int, Job>()
     private val originalTimedAmounts = mutableMapOf<Int, Int>()
 
-    init {
+    fun reloadData() {
         appData = repository.loadData()
-        if (appData.setupComplete && appData.prayers.isEmpty()) {
+        if (appData.setupComplete && appData.settings.showPrayers) {
             calculatePrayers()
         }
+    }
+
+    init {
+        appData = repository.loadData()
         if (appData.setupComplete) {
+            if (appData.settings.showPrayers) calculatePrayers()
             initNotifications()
             checkPendingQuestReset()
         }
@@ -78,7 +83,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         repository.saveData(appData)
     }
 
-    fun completeSetup(name: String, workoutLevel: String, goal: String, color: String) {
+    fun completeSetup(name: String, workoutLevel: String, goal: String, color: String, gender: String = "male", showPrayers: Boolean = true, showHabits: Boolean = true, profileImagePath: String = "") {
         val user = appData.user.copy()
         val scaling = appData.scaling.copy()
         var startingLevel = 0
@@ -90,7 +95,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (goal == "longterm") progressSpeed = 90
 
         user.name = name.ifEmpty { "Unknown" }
+        user.gender = gender
         user.level = startingLevel
+        if (profileImagePath.isNotEmpty()) user.profileImg = profileImagePath
         scaling.repsProgressSpeed = progressSpeed
 
         if (startingLevel > 0) {
@@ -106,7 +113,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         appData = appData.copy(
             user = user,
             scaling = scaling,
-            settings = appData.settings.copy(color = color),
+            settings = appData.settings.copy(color = color, showPrayers = showPrayers, showHabits = showHabits),
             setupComplete = true,
             quest = appData.quest.copy(nextReset = calculateNextReset(System.currentTimeMillis()))
         )
@@ -252,10 +259,11 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 val exData = appData.exercises.find { it.name == qe.name }
                 if (exData != null) {
                     xpGain += qe.amount * exData.xpPerRep
-                    statGains["STR"] = statGains["STR"]!! + (exData.statGain.STR * qe.amount)
-                    statGains["AGI"] = statGains["AGI"]!! + (exData.statGain.AGI * qe.amount)
-                    statGains["VIT"] = statGains["VIT"]!! + (exData.statGain.VIT * qe.amount)
-                    statGains["END"] = statGains["END"]!! + (exData.statGain.END * qe.amount)
+                    val reps = qe.amount.toDouble()
+                    statGains["STR"] = statGains["STR"]!! + exData.statGain.STR * reps / (1 + appData.user.stats.STR / 20.0)
+                    statGains["AGI"] = statGains["AGI"]!! + exData.statGain.AGI * reps / (1 + appData.user.stats.AGI / 20.0)
+                    statGains["VIT"] = statGains["VIT"]!! + exData.statGain.VIT * reps / (1 + appData.user.stats.VIT / 20.0)
+                    statGains["END"] = statGains["END"]!! + exData.statGain.END * reps / (1 + appData.user.stats.END / 20.0)
                 }
             }
 
@@ -297,12 +305,41 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             (lvl - oldLevel) * appData.scaling.apPerLevel
         } else 0
 
+        val rank = when {
+            displayLevel >= 20 -> "Legend"
+            displayLevel >= 15 -> "Diamond"
+            displayLevel >= 10 -> "Platinum"
+            displayLevel >= 6 -> "Gold"
+            displayLevel >= 3 -> "Silver"
+            else -> "Bronze"
+        }
+        val title = when {
+            displayLevel >= 20 -> "Legend"
+            displayLevel >= 15 -> "Master"
+            displayLevel >= 10 -> "Elite"
+            displayLevel >= 6 -> "Warrior"
+            displayLevel >= 3 -> "Apprentice"
+            displayLevel == 0 -> "Newbie"
+            else -> "Beginner"
+        }
+        val charClass = when {
+            displayLevel >= 15 -> "S"
+            displayLevel >= 10 -> "A"
+            displayLevel >= 6 -> "B"
+            displayLevel >= 3 -> "C"
+            displayLevel >= 1 -> "D"
+            else -> "F"
+        }
+
         appData = appData.copy(
             user = appData.user.copy(
                 level = displayLevel,
                 totalXp = appData.user.totalXp,
                 xpProgress = appData.user.totalXp - cumulative,
                 xpNeeded = next,
+                rank = rank,
+                currentTitle = title,
+                characterClass = charClass,
                 stats = appData.user.stats.copy(AP = appData.user.stats.AP + apGained)
             )
         )
@@ -401,10 +438,10 @@ fun usePasscard() {
             }
         } else {
             if (!appData.quest.completed && !appData.quest.usedPasscard) {
-                // Apply penalty: lose 10% of total XP
+                // Flat penalty: lose 50 XP (the value of ~1 exercise)
                 appData = appData.copy(
                     user = appData.user.copy(
-                        totalXp = floor(appData.user.totalXp * 0.9),
+                        totalXp = (appData.user.totalXp - 50.0).coerceAtLeast(0.0),
                         streak = 0
                     )
                 )
@@ -446,13 +483,12 @@ fun usePasscard() {
         if (index in currentExtras.indices) {
             currentExtras[index] = currentExtras[index].copy(done = isDone)
             appData = appData.copy(quest = appData.quest.copy(extraExercises = currentExtras))
-            
-            // Give bonus XP for extra exercises (no penalty for not doing them)
+
             if (isDone) {
                 val exercise = currentExtras[index]
                 val exData = appData.exercises.find { it.name == exercise.name }
                 if (exData != null) {
-                    val xpGain = exercise.amount * exData.xpPerRep * 0.5 // 50% XP for bonus exercises
+                    val xpGain = exercise.amount * exData.xpPerRep * 0.5
                     val user = appData.user.copy(
                         totalXp = appData.user.totalXp + xpGain
                     )
@@ -461,6 +497,16 @@ fun usePasscard() {
                 }
             }
             saveData()
+
+            if (currentExtras.all { it.done } && appData.quest.extraSetsRemaining > 0) {
+                generateExtraExercises()
+            }
+        }
+    }
+
+    fun requestExtraSet() {
+        if (appData.quest.completed && appData.quest.extraSetsRemaining > 0) {
+            generateExtraExercises()
         }
     }
 
@@ -469,11 +515,11 @@ fun usePasscard() {
             appData = appData.copy(quest = appData.quest.copy(extraExercises = listOf()))
             return
         }
-        
+        if (appData.quest.extraSetsRemaining <= 0) return
+
         val level = appData.user.level
         val settings = appData.settings
         
-        // Filter exercises based on settings
         val available = appData.exercises.filter { ex ->
             ex.requiredLevel <= level && 
             settings.equipmentTypes.contains(ex.equipment) &&
@@ -483,7 +529,6 @@ fun usePasscard() {
              ex.muscleGroup == "cardio")
         }
         
-        // Pick 2-3 random bonus exercises
         val numExtra = (2..3).random()
         val selected = available.shuffled().take(numExtra).map { ex ->
             val base = if (ex.timed) appData.scaling.baseTime else appData.scaling.baseReps
@@ -491,7 +536,12 @@ fun usePasscard() {
             QuestExercise(name = ex.name, amount = amount, done = false, timed = ex.timed, muscleGroup = ex.muscleGroup, equipment = ex.equipment)
         }
         
-        appData = appData.copy(quest = appData.quest.copy(extraExercises = selected))
+        appData = appData.copy(
+            quest = appData.quest.copy(
+                extraExercises = selected,
+                extraSetsRemaining = appData.quest.extraSetsRemaining - 1
+            )
+        )
     }
 
     fun toggleHabitDone(index: Int, isDone: Boolean) {
@@ -545,61 +595,6 @@ fun usePasscard() {
         }
     }
 
-    fun updateProfileImage(path: String) {
-        appData = appData.copy(user = appData.user.copy(profileImg = path))
-        saveData()
-    }
-
-    fun saveSettings(
-        name: String,
-        color: String,
-        gender: String = "male",
-        prayerAlgorithm: String = "default",
-        difficulty: String = "beginner",
-        daysPerWeek: Int = 3,
-        trainingGoals: List<String> = listOf("strength"),
-        equipmentTypes: List<String> = listOf("bodyweight"),
-        showPrayers: Boolean = true,
-        notificationsEnabled: Boolean = true,
-        workoutReminderEnabled: Boolean = true,
-        workoutReminderHour: Int = 8,
-        workoutReminderMinute: Int = 0,
-        prayerNotificationsEnabled: Boolean = true,
-        prayerNotificationLeadMinutes: Int = 10,
-        streakWarningEnabled: Boolean = true,
-        streakWarningHour: Int = 21,
-        streakWarningMinute: Int = 0
-    ) {
-        appData = appData.copy(
-            user = appData.user.copy(
-                name = name.ifEmpty { "Unknown" },
-                gender = gender
-            ),
-            settings = Settings(
-                color = color,
-                prayerAlgorithm = prayerAlgorithm,
-                difficulty = difficulty,
-                daysPerWeek = daysPerWeek,
-                trainingGoals = trainingGoals,
-                equipmentTypes = equipmentTypes,
-                showPrayers = showPrayers,
-                prayerLatitude = appData.settings.prayerLatitude,
-                prayerLongitude = appData.settings.prayerLongitude,
-                notificationsEnabled = notificationsEnabled,
-                workoutReminderEnabled = workoutReminderEnabled,
-                workoutReminderHour = workoutReminderHour,
-                workoutReminderMinute = workoutReminderMinute,
-                prayerNotificationsEnabled = prayerNotificationsEnabled,
-                prayerNotificationLeadMinutes = prayerNotificationLeadMinutes,
-                streakWarningEnabled = streakWarningEnabled,
-                streakWarningHour = streakWarningHour,
-                streakWarningMinute = streakWarningMinute
-            )
-        )
-        saveData()
-        scheduleNotifications()
-    }
-
     private fun calculateNextReset(from: Long): Long {
         val next = Calendar.getInstance().apply { timeInMillis = from }
         next.set(Calendar.HOUR_OF_DAY, 3)
@@ -615,41 +610,72 @@ fun usePasscard() {
     private fun generateNewQuest() {
         val level = appData.user.level
         val settings = appData.settings
-        val unlocked = appData.exercises.filter { ex ->
+
+        // Respect workoutDays: if today is not a scheduled day, minimal quest
+        val today = Calendar.getInstance().get(Calendar.DAY_OF_WEEK) - 1 // 1=Sun → 0
+        val todayIndex = if (today == 0) 7 else today // convert Sun=1 to 7
+        val isWorkoutDay = settings.workoutDays.isEmpty() || settings.workoutDays.contains(todayIndex)
+
+        val baseCount = when {
+            !isWorkoutDay -> 1 // rest day: 1 exercise maintenance
+            settings.difficulty == "intermediate" -> 3
+            settings.difficulty == "advanced" -> 4
+            else -> 2
+        }
+        val levelBonus = if (isWorkoutDay) level / 5 else 0
+        val numExercises = min(baseCount + levelBonus, 8).coerceAtMost(appData.exercises.size)
+
+        val difficultyMultiplier = when (settings.difficulty) {
+            "advanced" -> 1.2
+            "beginner" -> 0.8
+            else -> 1.0
+        }
+
+        // Prioritize exercises matching training goals; cap full/cardio at 1
+        val goals = settings.trainingGoals
+        val filtered = appData.exercises.filter { ex ->
             ex.requiredLevel <= level &&
             settings.equipmentTypes.contains(ex.equipment) &&
-            (settings.trainingGoals.isEmpty() ||
-             settings.trainingGoals.contains(ex.muscleGroup) ||
+            (goals.isEmpty() ||
+             goals.contains(ex.muscleGroup) ||
              ex.muscleGroup == "full" ||
              ex.muscleGroup == "cardio")
-        }.toMutableList()
-        val selected = mutableListOf<Exercise>()
-        val numExercises = min(4, unlocked.size)
-
-        repeat(numExercises) {
-            if (unlocked.isNotEmpty()) {
-                val idx = unlocked.indices.random()
-                selected.add(unlocked.removeAt(idx))
-            }
         }
+        val (fullCardio, others) = filtered.partition { it.muscleGroup == "full" || it.muscleGroup == "cardio" }
+        val capped = others + fullCardio.take(1)
+        val sorted = capped.sortedByDescending { ex ->
+            var score = 0
+            if (goals.contains(ex.muscleGroup)) score += 10
+            if (ex.difficulty <= 3 && settings.difficulty == "beginner") score += 5
+            if (ex.difficulty >= 4 && settings.difficulty == "advanced") score += 5
+            score
+        }
+
+        val selected = sorted.take(numExercises).shuffled()
 
         val newQuestExercises = selected.map { ex ->
             val base = if (ex.timed) appData.scaling.baseTime else appData.scaling.baseReps
             val maxV = if (ex.timed) appData.scaling.maxTime else appData.scaling.maxReps
             val exp = if (ex.timed) appData.scaling.exponent2 else appData.scaling.exponent3
             val fraction = (level.toDouble() / appData.scaling.repsProgressSpeed).pow(exp)
-            val amount = min(maxV.toDouble(), floor(ex.baseScale * (base + (maxV - base) * fraction))).toInt()
+            val rawAmount = floor(ex.baseScale * (base + (maxV - base) * fraction))
+            val amount = min(maxV.toDouble(), rawAmount * difficultyMultiplier).toInt().coerceAtLeast(1)
             QuestExercise(name = ex.name, amount = amount, done = false, timed = ex.timed, muscleGroup = ex.muscleGroup, equipment = ex.equipment)
         }
 
-        // Reset habits daily
         val resetHabits = appData.habits.map { it.copy(done = false) }.toMutableList()
 
         appData = appData.copy(
-            quest = appData.quest.copy(exercises = newQuestExercises, extraExercises = listOf(), completed = false, usedPasscard = false),
+            quest = appData.quest.copy(
+                exercises = newQuestExercises,
+                extraExercises = listOf(),
+                completed = false,
+                usedPasscard = false,
+                extraSetsRemaining = 3
+            ),
             habits = resetHabits
         )
-        calculatePrayers() // Refresh times for the new day
+        calculatePrayers()
         saveData()
     }
 }

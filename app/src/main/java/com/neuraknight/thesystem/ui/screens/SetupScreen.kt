@@ -1,27 +1,34 @@
 package com.neuraknight.thesystem.ui.screens
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import com.neuraknight.thesystem.ui.screens.common.DropdownSelector
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun SetupScreen(onSetupComplete: (String, String, String, String) -> Unit) {
+fun SetupScreen(onSetupComplete: (String, String, String, String, String, Boolean, Boolean, String) -> Unit) {
+    val context = LocalContext.current
     var name by remember { mutableStateOf("") }
     val workoutOptions = listOf("beginner", "intermediate", "advanced")
     var workoutLevel by remember { mutableStateOf(workoutOptions[0]) }
@@ -29,31 +36,100 @@ fun SetupScreen(onSetupComplete: (String, String, String, String) -> Unit) {
     var goal by remember { mutableStateOf(goalOptions[0]) }
     val colorOptions = listOf("blue", "red", "green", "yellow", "purple", "cyan", "grey")
     var color by remember { mutableStateOf(colorOptions[0]) }
+    var gender by remember { mutableStateOf("male") }
+    var showPrayers by remember { mutableStateOf(true) }
+    var showHabits by remember { mutableStateOf(true) }
+    var pendingProfileImg by remember { mutableStateOf("") }
+
+    val pickImageLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            try {
+                val inputStream = context.contentResolver.openInputStream(it)
+                if (inputStream != null) {
+                    val bitmap = inputStream.use { stream ->
+                        android.graphics.BitmapFactory.decodeStream(stream)
+                    }
+                    if (bitmap != null) {
+                        val file = java.io.File(context.filesDir, "profile_image.jpg")
+                        java.io.FileOutputStream(file).use { outputStream ->
+                            bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, outputStream)
+                        }
+                        pendingProfileImg = file.absolutePath
+                    }
+                }
+            } catch (_: Exception) { }
+        }
+    }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+        horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("Welcome to The System", style = MaterialTheme.typography.headlineMedium)
+        Spacer(modifier = Modifier.height(32.dp))
+        Text("Welcome to The System", style = MaterialTheme.typography.headlineMedium, textAlign = TextAlign.Center)
         Spacer(modifier = Modifier.height(24.dp))
 
-        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") })
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .clip(CircleShape)
+                .border(2.dp, MaterialTheme.colorScheme.primary, CircleShape)
+                .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f))
+                .clickable { pickImageLauncher.launch("image/*") },
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                imageVector = Icons.Default.Person,
+                contentDescription = null,
+                modifier = Modifier.size(48.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Text("Tap to set profile picture", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
         Spacer(modifier = Modifier.height(16.dp))
+
+        OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            FilterChip(selected = gender == "male", onClick = { gender = "male" }, label = { Text("Male") }, leadingIcon = if (gender == "male") {{ Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }} else null, modifier = Modifier.weight(1f))
+            FilterChip(selected = gender == "female", onClick = { gender = "female" }, label = { Text("Female") }, leadingIcon = if (gender == "female") {{ Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }} else null, modifier = Modifier.weight(1f))
+        }
+        Spacer(modifier = Modifier.height(12.dp))
+
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("Enable Prayers", modifier = Modifier.weight(1f))
+            Switch(checked = showPrayers, onCheckedChange = { showPrayers = it })
+        }
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            Text("Enable Habits", modifier = Modifier.weight(1f))
+            Switch(checked = showHabits, onCheckedChange = { showHabits = it })
+        }
+        Spacer(modifier = Modifier.height(12.dp))
 
         DropdownSelector(label = "Workout Level", options = workoutOptions, selected = workoutLevel, onSelected = { workoutLevel = it })
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         DropdownSelector(label = "Goals", options = goalOptions, selected = goal, onSelected = { goal = it })
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
 
         DropdownSelector(label = "Color", options = colorOptions, selected = color, onSelected = { color = it })
         Spacer(modifier = Modifier.height(24.dp))
 
-        Button(onClick = { onSetupComplete(name, workoutLevel, goal, color) }) {
-            Text("Start")
+        Button(
+            onClick = { onSetupComplete(name, workoutLevel, goal, color, gender, showPrayers, showHabits, pendingProfileImg) },
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(12.dp)
+        ) {
+            Text("Start", fontWeight = FontWeight.Bold)
         }
+        Spacer(modifier = Modifier.height(32.dp))
     }
 }

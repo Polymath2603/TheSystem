@@ -1,5 +1,9 @@
 package com.neuraknight.thesystem.ui.screens.tabs
 
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -13,23 +17,28 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.neuraknight.thesystem.ui.screens.dialogs.SettingsDialog
+import com.neuraknight.thesystem.ui.screens.SettingsActivity
 import com.neuraknight.thesystem.ui.viewmodel.MainViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import java.io.File
 import kotlin.math.roundToInt
 
 @Composable
 fun ProfileTab(viewModel: MainViewModel) {
     val user = viewModel.appData.user
     val settings = viewModel.appData.settings
-    var showSettingsDialog by remember { mutableStateOf(false) }
+    val context = LocalContext.current
 
-    if (showSettingsDialog) {
-        SettingsDialog(
-            viewModel = viewModel,
-            onDismiss = { showSettingsDialog = false }
-        )
+    val settingsLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.StartActivityForResult()
+    ) {
+        viewModel.reloadData()
     }
 
     LazyColumn(
@@ -62,12 +71,36 @@ fun ProfileTab(viewModel: MainViewModel) {
                             .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)),
                         contentAlignment = Alignment.Center
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                        if (user.profileImg.isNotEmpty() && File(user.profileImg).exists()) {
+                            var bitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
+                            LaunchedEffect(user.profileImg) {
+                                bitmap = withContext(Dispatchers.IO) {
+                                    android.graphics.BitmapFactory.decodeFile(user.profileImg)
+                                }
+                            }
+                            if (bitmap != null) {
+                                Image(
+                                    bitmap = bitmap!!.asImageBitmap(),
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize(),
+                                    contentScale = ContentScale.Crop
+                                )
+                            } else {
+                                Icon(
+                                    imageVector = Icons.Default.Person,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(48.dp),
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            }
+                        } else {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                modifier = Modifier.size(48.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                     
                     Spacer(modifier = Modifier.height(12.dp))
@@ -219,7 +252,10 @@ fun ProfileTab(viewModel: MainViewModel) {
         // Settings Button
         item {
             Button(
-                onClick = { showSettingsDialog = true },
+                onClick = {
+                    val intent = Intent(context, SettingsActivity::class.java)
+                    settingsLauncher.launch(intent)
+                },
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp)
             ) {

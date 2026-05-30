@@ -10,7 +10,6 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.EmojiEvents
-import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -52,11 +51,6 @@ fun WorkoutTab(viewModel: MainViewModel) {
             Spacer(modifier = Modifier.height(16.dp))
         }
 
-        item {
-            DayCountdown(timeLeft = timeLeft, completed = quest.completed)
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
         // Show exercises or passcard message
         if (!quest.usedPasscard) {
             itemsIndexed(quest.exercises) { index, exercise ->
@@ -73,45 +67,57 @@ fun WorkoutTab(viewModel: MainViewModel) {
             }
 
             // Extra exercises only if main completed
-            if (quest.completed && quest.extraExercises.isNotEmpty()) {
-                item {
-                    Text(
-                        text = "BONUS EXERCISES (OPTIONAL)",
-                        style = MaterialTheme.typography.titleMedium,
-                        color = MaterialTheme.colorScheme.secondary,
-                        modifier = Modifier.padding(vertical = 8.dp)
-                    )
+            if (quest.completed) {
+                if (quest.extraExercises.isNotEmpty()) {
+                    item {
+                        Text(
+                            text = "BONUS EXERCISES (OPTIONAL)",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.secondary,
+                            modifier = Modifier.padding(vertical = 8.dp)
+                        )
+                    }
+                    itemsIndexed(quest.extraExercises) { index, exercise ->
+                        ExerciseCard(
+                            name = exercise.name,
+                            amount = exercise.amount,
+                            isDone = exercise.done,
+                            isTimed = exercise.timed,
+                            onToggle = { viewModel.toggleExtraExercise(index, it) },
+                            onStartTimer = { viewModel.startExtraTimedExercise(index) },
+                            onSkipTimer = { viewModel.skipExtraTimedExercise(index) }
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                 }
-                itemsIndexed(quest.extraExercises) { index, exercise ->
-                    ExerciseCard(
-                        name = exercise.name,
-                        amount = exercise.amount,
-                        isDone = exercise.done,
-                        isTimed = exercise.timed,
-                        onToggle = { viewModel.toggleExtraExercise(index, it) },
-                        onStartTimer = { viewModel.startExtraTimedExercise(index) },
-                        onSkipTimer = { viewModel.skipExtraTimedExercise(index) }
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
+                // Show "Get More" button if extras are all done (or empty) and sets remain
+                if (quest.extraSetsRemaining > 0 && (quest.extraExercises.isEmpty() || quest.extraExercises.all { it.done })) {
+                    item {
+                        OutlinedButton(
+                            onClick = { viewModel.requestExtraSet() },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(8.dp)
+                        ) {
+                            Text(
+                                "GET MORE BONUS EXERCISES (${quest.extraSetsRemaining} left)",
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(12.dp))
+                    }
                 }
             }
         }
 
-        // Next Day button - available when quest is completed or passcard used
-        if (quest.completed || quest.usedPasscard) {
-            item {
-                Spacer(modifier = Modifier.height(8.dp))
-                Button(
-                    onClick = { viewModel.resetQuest(force = true) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.primary)
-                ) {
-                    Icon(Icons.Default.SkipNext, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Next Day", fontWeight = FontWeight.Bold)
-                }
-            }
+        item {
+            DeadlineCountdown(
+                timeLeft = timeLeft,
+                completed = quest.completed,
+                usedPasscard = quest.usedPasscard,
+                passcards = user.passcards,
+                onUsePasscard = { viewModel.usePasscard() }
+            )
+            Spacer(modifier = Modifier.height(16.dp))
         }
 
         if (quest.usedPasscard) {
@@ -150,131 +156,36 @@ fun WorkoutTab(viewModel: MainViewModel) {
                 }
             }
         }
-
-        // Deadline at bottom with penalty warning
-        item {
-            Spacer(modifier = Modifier.height(16.dp))
-            DeadlineInfo(
-                timeLeft = timeLeft,
-                completed = quest.completed,
-                passcards = user.passcards,
-                hasExtra = quest.extraExercises.isNotEmpty() && quest.completed,
-                onUsePasscard = { viewModel.usePasscard() }
-            )
-        }
     }
 }
 
 @Composable
-fun DeadlineInfo(
+fun DeadlineCountdown(
     timeLeft: Long,
     completed: Boolean,
+    usedPasscard: Boolean,
     passcards: Int,
-    hasExtra: Boolean,
     onUsePasscard: () -> Unit
 ) {
-    val hours = TimeUnit.MILLISECONDS.toHours(timeLeft)
-    val minutes = TimeUnit.MILLISECONDS.toMinutes(timeLeft) % 60
-    val seconds = TimeUnit.MILLISECONDS.toSeconds(timeLeft) % 60
-
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ) {
-        Surface(
-            color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
-            shape = RoundedCornerShape(8.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .border(1.dp, MaterialTheme.colorScheme.error.copy(alpha = 0.5f), RoundedCornerShape(8.dp))
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "DEADLINE",
-                    style = MaterialTheme.typography.labelSmall,
-                    color = MaterialTheme.colorScheme.error
-                )
-                Text(
-                    text = "${hours}h ${minutes}m ${seconds}s",
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.error
-                )
-                if (!completed) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "WARNING: Failure will result in XP penalty!",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.error,
-                        textAlign = TextAlign.Center
-                    )
-                } else if (hasExtra) {
-                    Text(
-                        text = "Main quest complete! Bonus available above.",
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.secondary,
-                        textAlign = TextAlign.Center
-                    )
-                }
-            }
-        }
-        
-        Spacer(modifier = Modifier.height(16.dp))
-
-        if (!completed && passcards > 0) {
-            var showConfirmDialog by remember { mutableStateOf(false) }
-
-            OutlinedButton(
-                onClick = { showConfirmDialog = true },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(4.dp)
-            ) {
-                Text("USE PASSCARD - REST DAY ($passcards available)", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-            }
-
-            if (showConfirmDialog) {
-                AlertDialog(
-                    onDismissRequest = { showConfirmDialog = false },
-                    title = { Text("Use Passcard?") },
-                    text = { Text("This will consume 1 passcard to skip today's quest. You have $passcards remaining.") },
-                    confirmButton = {
-                        TextButton(onClick = {
-                            onUsePasscard()
-                            showConfirmDialog = false
-                        }) { Text("Use Passcard") }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showConfirmDialog = false }) { Text("Cancel") }
-                    }
-                )
-            }
-        }
-    }
-}
-
-@Composable
-fun DayCountdown(timeLeft: Long, completed: Boolean) {
     val totalDaySeconds = 24 * 60 * 60L
     val progress = 1f - (timeLeft.toFloat() / totalDaySeconds).coerceIn(0f, 1f)
-    val outlineColor = MaterialTheme.colorScheme.outline
-    
     val hours = TimeUnit.MILLISECONDS.toHours(timeLeft)
     val minutes = TimeUnit.MILLISECONDS.toMinutes(timeLeft) % 60
     val seconds = TimeUnit.MILLISECONDS.toSeconds(timeLeft) % 60
 
+    val primaryColor = MaterialTheme.colorScheme.primary
+    val errorColor = MaterialTheme.colorScheme.error
+    val onSurfaceColor = MaterialTheme.colorScheme.onSurface
+    val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
+
     Surface(
-        color = if (completed) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f),
+        color = if (completed) primaryColor.copy(alpha = 0.1f) else surfaceVariant.copy(alpha = 0.3f),
         shape = RoundedCornerShape(16.dp),
         modifier = Modifier
             .fillMaxWidth()
             .border(
-                2.dp, 
-                if (completed) MaterialTheme.colorScheme.primary.copy(alpha = 0.5f) else outlineColor.copy(alpha = 0.3f), 
+                2.dp,
+                if (completed) primaryColor.copy(alpha = 0.5f) else errorColor.copy(alpha = 0.3f),
                 RoundedCornerShape(16.dp)
             )
     ) {
@@ -283,14 +194,12 @@ fun DayCountdown(timeLeft: Long, completed: Boolean) {
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "DAY PROGRESS",
+                text = "DEADLINE",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                color = errorColor
             )
-            
+
             Spacer(modifier = Modifier.height(12.dp))
-            
-            val primaryColor = MaterialTheme.colorScheme.primary
 
             Box(
                 contentAlignment = Alignment.Center,
@@ -299,13 +208,13 @@ fun DayCountdown(timeLeft: Long, completed: Boolean) {
                 Canvas(modifier = Modifier.fillMaxSize()) {
                     val strokeWidth = 14.dp.toPx()
                     val radius = (size.minDimension - strokeWidth) / 2
-                    
+
                     drawCircle(
                         color = Color.Gray.copy(alpha = 0.2f),
                         radius = radius,
                         style = Stroke(width = strokeWidth)
                     )
-                    
+
                     drawArc(
                         color = primaryColor,
                         startAngle = -90f,
@@ -316,19 +225,80 @@ fun DayCountdown(timeLeft: Long, completed: Boolean) {
                         style = Stroke(width = strokeWidth, cap = StrokeCap.Round)
                     )
                 }
-                
+
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    if (completed) {
+                        Text(
+                            text = "DONE",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = primaryColor
+                        )
+                        Text(
+                            text = "COMPLETE",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = onSurfaceColor.copy(alpha = 0.6f)
+                        )
+                    } else {
+                        Text(
+                            text = "${hours}h ${minutes}m ${seconds}s",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color = errorColor
+                        )
+                        Text(
+                            text = "REMAINING",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = onSurfaceColor.copy(alpha = 0.6f)
+                        )
+                    }
+                }
+            }
+
+            if (!completed) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Surface(
+                    color = MaterialTheme.colorScheme.error.copy(alpha = 0.1f),
+                    shape = RoundedCornerShape(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
                     Text(
-                        text = if (completed) "DONE" else "${hours}h ${minutes}m",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = if (completed) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                    )
-                    Text(
-                        text = if (completed) "COMPLETE" else "REMAINING",
+                        text = "WARNING: Failure will result in XP penalty!",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        color = MaterialTheme.colorScheme.error,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(8.dp)
                     )
+                }
+
+                if (passcards > 0) {
+                    Spacer(modifier = Modifier.height(12.dp))
+                    var showConfirmDialog by remember { mutableStateOf(false) }
+
+                    OutlinedButton(
+                        onClick = { showConfirmDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(4.dp)
+                    ) {
+                        Text("USE PASSCARD - REST DAY ($passcards available)", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                    }
+
+                    if (showConfirmDialog) {
+                        AlertDialog(
+                            onDismissRequest = { showConfirmDialog = false },
+                            title = { Text("Use Passcard?") },
+                            text = { Text("This will consume 1 passcard to skip today's quest. You have $passcards remaining.") },
+                            confirmButton = {
+                                TextButton(onClick = {
+                                    onUsePasscard()
+                                    showConfirmDialog = false
+                                }) { Text("Use Passcard") }
+                            },
+                            dismissButton = {
+                                TextButton(onClick = { showConfirmDialog = false }) { Text("Cancel") }
+                            }
+                        )
+                    }
                 }
             }
         }

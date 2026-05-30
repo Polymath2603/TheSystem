@@ -50,11 +50,11 @@ fun MainScreen(viewModel: MainViewModel) {
     val appData = viewModel.appData
     var selectedTabIndex by remember { mutableStateOf(0) }
 
-    val tabs = remember(appData.settings.showPrayers) {
+    val tabs = remember(appData.settings.showPrayers, appData.settings.showHabits) {
         buildList {
             add(TabItem("Workout", Icons.Default.FitnessCenter))
             if (appData.settings.showPrayers) add(TabItem("Prayers", Icons.Default.Mosque))
-            add(TabItem("Habits", Icons.Default.History))
+            if (appData.settings.showHabits) add(TabItem("Habits", Icons.Default.History))
             add(TabItem("Profile", Icons.Default.Person))
         }
     }
@@ -70,9 +70,8 @@ fun MainScreen(viewModel: MainViewModel) {
             Spacer(modifier = Modifier.height(24.dp))
 
             val correctedIndex = selectedTabIndex.coerceIn(0, tabs.lastIndex.coerceAtLeast(0))
-            val tabPadding = 8.dp
-            
-            ScrollableTabRow(
+
+            TabRow(
                 selectedTabIndex = correctedIndex,
                 containerColor = Color.Transparent,
                 divider = {},
@@ -84,14 +83,13 @@ fun MainScreen(viewModel: MainViewModel) {
                         )
                     }
                 },
-                edgePadding = tabPadding,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 tabs.forEachIndexed { index, tabItem ->
                     Tab(
                         selected = correctedIndex == index,
                         onClick = { selectedTabIndex = index },
-                        modifier = Modifier.padding(horizontal = 4.dp),
+                        modifier = Modifier.weight(1f),
                         text = { 
                             Column(horizontalAlignment = Alignment.CenterHorizontally) {
                                 Icon(

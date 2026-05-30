@@ -100,7 +100,8 @@ fun PrayerTab(viewModel: MainViewModel) {
                         val timeLeft = prayerTime.time - currentTime
                         val hours = TimeUnit.MILLISECONDS.toHours(timeLeft)
                         val minutes = TimeUnit.MILLISECONDS.toMinutes(timeLeft) % 60
-                        if (hours > 0) "Coming in ${hours}h ${minutes}m" else "Coming in ${minutes}m"
+                        val countdown = if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m"
+                        "${prayer.time} (Coming in $countdown)"
                     }
                     else -> "Scheduled: ${prayer.time}"
                 }

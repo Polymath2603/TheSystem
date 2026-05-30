@@ -90,20 +90,20 @@ fun HabitsTab(viewModel: MainViewModel) {
         // System message at top
         item {
             Surface(
-                color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),
+                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                 shape = RoundedCornerShape(4.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .border(
                         1.dp,
-                        MaterialTheme.colorScheme.secondary.copy(alpha = 0.5f),
+                        MaterialTheme.colorScheme.primary.copy(alpha = 0.5f),
                         RoundedCornerShape(4.dp)
                     )
             ) {
                 Text(
                     text = "[SYSTEM: ACTIVE HABITS UNLOCKED]",
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.secondary,
+                    color = MaterialTheme.colorScheme.primary,
                     modifier = Modifier.padding(12.dp),
                     textAlign = androidx.compose.ui.text.style.TextAlign.Center
                 )
@@ -114,14 +114,15 @@ fun HabitsTab(viewModel: MainViewModel) {
         // Habits list - done items at the end
         itemsIndexed(
             items = sortedIndexedHabits,
-            key = { idx, (origIdx, _) -> "habit_${origIdx}_$idx" }
+            key = { idx, (origIdx, _) -> "habit_${origIdx}" }
         ) { _, (actualIndex, habit) ->
-            val borderColor = if (habit.done) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-            val bgColor = if (habit.done) MaterialTheme.colorScheme.secondary.copy(alpha = 0.05f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            val borderColor = if (habit.done) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
+            val bgColor = if (habit.done) MaterialTheme.colorScheme.primary.copy(alpha = 0.05f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
 
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .animateItem()
                     .background(bgColor, RoundedCornerShape(8.dp))
                     .border(1.dp, borderColor, RoundedCornerShape(8.dp))
                     .padding(12.dp)
@@ -142,7 +143,7 @@ fun HabitsTab(viewModel: MainViewModel) {
                         text = habit.name.uppercase(),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Bold,
-                        color = if (habit.done) MaterialTheme.colorScheme.secondary else MaterialTheme.colorScheme.onSurface
+                        color = if (habit.done) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                     )
                     if (habit.isCustom) {
                         Text(
@@ -160,7 +161,7 @@ fun HabitsTab(viewModel: MainViewModel) {
                             viewModel.toggleHabitDone(actualIndex, isChecked)
                         },
                         colors = CheckboxDefaults.colors(
-                            checkedColor = MaterialTheme.colorScheme.secondary,
+                            checkedColor = MaterialTheme.colorScheme.primary,
                             uncheckedColor = MaterialTheme.colorScheme.outline
                         )
                     )

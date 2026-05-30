@@ -29,14 +29,13 @@ data class Prayer(
 
 data class Scaling(
     var maxTime: Int = 700,
-    var maxXP: Int = 3000000,
     var baseReps: Int = 10,
     var maxReps: Int = 250,
     var exponent3: Double = 1.35,
     var baseTime: Int = 10,
     var exponent2: Double = 1.8,
-    var baseXP: Int = 8,
-    var exponentFast: Double = 0.8,
+    var baseXP: Int = 80,
+    var exponentFast: Double = 1.5,
     var fastLevelCap: Int = 10,
     var repsProgressSpeed: Int = 60,
     var apPerLevel: Int = 5
@@ -69,7 +68,6 @@ data class User(
     var totalXp: Double = 0.0,
     var xpProgress: Double = 0.0,
     var xpNeeded: Double = 1.0,
-    var type: String = "Knight",
     var characterClass: String = "F",
     var rank: String = "Bronze",
     var currentTitle: String = "Newbie",
@@ -93,7 +91,7 @@ data class Quest(
     var exercises: List<QuestExercise> = listOf(),
     var extraExercises: List<QuestExercise> = listOf(),
     var usedPasscard: Boolean = false,
-    var penalty: Int = 0
+    var extraSetsRemaining: Int = 3
 )
 
 data class QuestExercise(
@@ -113,12 +111,13 @@ data class Habit(
 
 data class Settings(
     var color: String = "blue",
-    var showPrayers: Boolean = true,
+    var showPrayers: Boolean = false,
+    var showHabits: Boolean = true,
     var prayerAlgorithm: String = "default",
     var prayerLatitude: Double = 51.5074,
     var prayerLongitude: Double = -0.1278,
     var difficulty: String = "beginner",
-    var daysPerWeek: Int = 3,
+    var workoutDays: List<Int> = listOf(1, 3, 5),
     var trainingGoals: List<String> = listOf("strength"),
     var equipmentTypes: List<String> = listOf("bodyweight"),
     // Notification settings
@@ -146,8 +145,8 @@ fun getDefaultExercises(): List<Exercise> {
         Exercise(name = "chest_press", difficulty = 4, requiredLevel = 10, baseScale = 0.6, xpPerRep = 2.5, statGain = StatGain(STR = 0.12, AGI = 0.0, VIT = 0.0, END = 0.06, AP = 0.0), muscleGroup = "chest", equipment = "bar"),
         
         // Abs exercises
-        Exercise(name = "situps", difficulty = 2, requiredLevel = 0, baseScale = 1.0, xpPerRep = 1.8, statGain = StatGain(STR = 0.0, AGI = 0.1, VIT = 0.0, END = 0.05, AP = 0.0), muscleGroup = "abs", equipment = "bodyweight"),
-        Exercise(name = "crunches", difficulty = 3, requiredLevel = 5, baseScale = 0.8, xpPerRep = 2.0, statGain = StatGain(STR = 0.0, AGI = 0.12, VIT = 0.0, END = 0.06, AP = 0.0), muscleGroup = "abs", equipment = "bodyweight"),
+        Exercise(name = "situps", difficulty = 2, requiredLevel = 0, baseScale = 1.0, xpPerRep = 1.8, statGain = StatGain(STR = 0.08, AGI = 0.0, VIT = 0.0, END = 0.05, AP = 0.0), muscleGroup = "abs", equipment = "bodyweight"),
+        Exercise(name = "crunches", difficulty = 3, requiredLevel = 5, baseScale = 0.8, xpPerRep = 2.0, statGain = StatGain(STR = 0.1, AGI = 0.0, VIT = 0.0, END = 0.06, AP = 0.0), muscleGroup = "abs", equipment = "bodyweight"),
         Exercise(name = "leg_raises", difficulty = 3, requiredLevel = 5, baseScale = 0.8, xpPerRep = 2.0, statGain = StatGain(STR = 0.0, AGI = 0.1, VIT = 0.05, END = 0.05, AP = 0.0), muscleGroup = "abs", equipment = "bodyweight"),
         Exercise(name = "bicycle_crunches", difficulty = 3, requiredLevel = 5, baseScale = 0.8, xpPerRep = 2.0, statGain = StatGain(STR = 0.0, AGI = 0.12, VIT = 0.0, END = 0.06, AP = 0.0), muscleGroup = "abs", equipment = "bodyweight"),
         Exercise(name = "plank", difficulty = 3, requiredLevel = 0, baseScale = 1.0, xpPerRep = 0.2, statGain = StatGain(STR = 0.0, AGI = 0.0, VIT = 0.1, END = 0.1, AP = 0.0), timed = true, muscleGroup = "abs", equipment = "bodyweight"),

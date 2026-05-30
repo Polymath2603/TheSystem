@@ -33,8 +33,8 @@ class MainActivity : ComponentActivity() {
                 if (viewModel.appData.setupComplete) {
                     MainScreen(viewModel)
                 } else {
-                    SetupScreen { name, workoutLevel, goal, color ->
-                        viewModel.completeSetup(name, workoutLevel, goal, color)
+                    SetupScreen { name, workoutLevel, goal, color, gender, showPrayers, showHabits, profileImagePath ->
+                        viewModel.completeSetup(name, workoutLevel, goal, color, gender, showPrayers, showHabits, profileImagePath)
                     }
                 }
             }

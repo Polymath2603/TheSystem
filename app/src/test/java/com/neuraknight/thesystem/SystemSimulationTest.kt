@@ -102,29 +102,25 @@ class SystemSimulationTest {
     @Test
     fun testXpProgression_fastLevels() {
         val scaling = Scaling()
-        // Levels 1-10 use fast exponent (0.3) - with baseXP=1, most levels cost 1 XP
         val xp1 = calculateXpForLevel(1, scaling)
         val xp9 = calculateXpForLevel(9, scaling)
         val xp10 = calculateXpForLevel(10, scaling)
-        val xp11 = calculateXpForLevel(11, scaling) // jumps to slow progression
+        val xp11 = calculateXpForLevel(11, scaling)
 
         assertTrue("Level 1 XP should be > 0", xp1 > 0)
-        // Fast progression: levels 1-10 scale via exponentFast=0.8
         assertTrue("Level 9 XP should be > Level 1", xp9 > xp1)
         assertTrue("Level 10 XP should be > Level 9", xp10 > xp9)
-        // Slow progression kicks in at level 11 — big jump
-        assertTrue("Level 11 XP should be > Level 10 (slow progression)", xp11 > xp10 * 2)
+        assertTrue("Level 11 XP should be > Level 10", xp11 > xp10)
         println("XP Progression: L1=$xp1, L9=$xp9, L10=$xp10, L11=$xp11")
     }
 
     @Test
     fun testXpProgression_slowLevels() {
         val scaling = Scaling()
-        // Slow progression starts at level 11 (above fastLevelCap=10)
-        val xp10 = calculateXpForLevel(10, scaling) // ~50 XP (fast)
-        val xp11 = calculateXpForLevel(11, scaling) // ~125 XP (slow kicks in)
-        val xp20 = calculateXpForLevel(20, scaling) // ~2015 XP
-        val xp31 = calculateXpForLevel(31, scaling) // ~6525 XP
+        val xp10 = calculateXpForLevel(10, scaling)
+        val xp11 = calculateXpForLevel(11, scaling)
+        val xp20 = calculateXpForLevel(20, scaling)
+        val xp31 = calculateXpForLevel(31, scaling)
 
         assertTrue("Level 11 XP should be > Level 10", xp11 > xp10)
         assertTrue("Level 20 XP should be > Level 11", xp20 > xp11)
@@ -509,6 +505,52 @@ class SystemSimulationTest {
         println("Polar (Tromso): Fajr=${times.fajr}, Dhuhr=${times.dhuhr}, Isha=${times.isha}")
     }
 
+    @Test
+    fun testSunCalc_producesReasonableTimes() {
+        val cal = Calendar.getInstance()
+        cal.set(2026, Calendar.MARCH, 20) // Equinox
+        // Cairo (30°N, 31°E) — low latitude, no fallback needed
+        val times = SunCalc.getPrayerTimes(cal, 30.0, 31.0, SunCalc.PrayerMethod.MWL)
+
+        assertNotNull("Fajr should not be null", times.fajr)
+        assertNotNull("Sunrise should not be null", times.sunrise)
+        assertNotNull("Dhuhr should not be null", times.dhuhr)
+        assertNotNull("Asr should not be null", times.asr)
+        assertNotNull("Maghrib should not be null", times.maghrib)
+        assertNotNull("Isha should not be null", times.isha)
+
+        // Chronological order
+        assertTrue("Fajr before Sunrise", times.fajr!!.before(times.sunrise))
+        assertTrue("Sunrise before Dhuhr", times.sunrise!!.before(times.dhuhr))
+        assertTrue("Dhuhr before Asr", times.dhuhr!!.before(times.asr))
+        assertTrue("Asr before Maghrib", times.asr!!.before(times.maghrib))
+        assertTrue("Maghrib before Isha", times.maghrib!!.before(times.isha))
+
+        // Day length: on equinox, day ≈ 12h → sunrise and sunset ~6h from noon
+        val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+        println("Equinox Cairo MWL: Fajr=${times.fajr?.let { sdf.format(it) }}, Sunrise=${times.sunrise?.let { sdf.format(it) }}, " +
+                "Dhuhr=${times.dhuhr?.let { sdf.format(it) }}, Asr=${times.asr?.let { sdf.format(it) }}, " +
+                "Maghrib=${times.maghrib?.let { sdf.format(it) }}, Isha=${times.isha?.let { sdf.format(it) }}")
+    }
+
+    @Test
+    fun testSunCalc_meccaSummer() {
+        val cal = Calendar.getInstance()
+        cal.set(2026, Calendar.JUNE, 21) // Summer solstice
+        // Mecca (21.4°N, 39.8°E) — all times should be valid
+        val times = SunCalc.getPrayerTimes(cal, 21.4225, 39.8262, SunCalc.PrayerMethod.MWL)
+
+        assertNotNull("Fajr should not be null", times.fajr)
+        assertNotNull("Isha should not be null", times.isha)
+        assertTrue("Fajr before Sunrise", times.fajr!!.before(times.sunrise))
+        assertTrue("Isha after Maghrib", times.isha!!.after(times.maghrib))
+
+        val sdf = java.text.SimpleDateFormat("HH:mm", java.util.Locale.getDefault())
+        println("Mecca MWL Jun21: Fajr=${times.fajr?.let { sdf.format(it) }}, Sunrise=${times.sunrise?.let { sdf.format(it) }}, " +
+                "Dhuhr=${times.dhuhr?.let { sdf.format(it) }}, Asr=${times.asr?.let { sdf.format(it) }}, " +
+                "Maghrib=${times.maghrib?.let { sdf.format(it) }}, Isha=${times.isha?.let { sdf.format(it) }}")
+    }
+
     // === Full User Journey Simulation ===
 
     @Test
@@ -596,7 +638,7 @@ class SystemSimulationTest {
             }
         }
 
-        assertTrue("90-day intermediate should reach level 10+", user.level >= 10)
+        assertTrue("90-day intermediate should reach level 6+", user.level >= 6)
         println("Final: Level ${user.level}, AP $ap, Passcards $passcards")
     }
 
@@ -816,7 +858,7 @@ class SystemSimulationTest {
     fun testModelDefaults_settings() {
         val s = Settings()
         assertEquals("blue", s.color)
-        assertTrue(s.showPrayers)
+        assertFalse(s.showPrayers)
         assertEquals("default", s.prayerAlgorithm)
         assertEquals(51.5074, s.prayerLatitude, 0.001)
         assertEquals(-0.1278, s.prayerLongitude, 0.001)
@@ -827,7 +869,7 @@ class SystemSimulationTest {
     fun testModelDefaults_scaling() {
         val s = Scaling()
         // exponent should be removed
-        assertEquals(0.8, s.exponentFast, 0.001)
+        assertEquals(1.5, s.exponentFast, 0.001)
         assertEquals(10, s.fastLevelCap)
         assertEquals(5, s.apPerLevel)
     }

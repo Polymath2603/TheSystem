@@ -21,14 +21,14 @@ object SunCalc {
     )
 
     enum class PrayerMethod {
-        DEFAULT,      // Standard -18 degrees
-        MWL,          // Muslim World League -18 degrees
-        ISNA,         // Islamic Society of North America -15 degrees
-        EGYPTO,       // Egyptian General Authority -19.5 degrees
-        MAKKAH,       // Umm Al-Qura University -18.5 degrees
-        KARACHI,      // Karachi -18 degrees
-        TEHRAN,       // Tehran -17.7 degrees Fajr, -14 degrees Isha
-        JAFARI        // Jafari -16 degrees Fajr, -14 degrees Isha
+        DEFAULT,      // MWL standard (18° Fajr, 17° Isha)
+        MWL,          // Muslim World League (18° Fajr, 17° Isha)
+        ISNA,         // Islamic Society of North America (15° Fajr, 15° Isha)
+        EGYPTO,       // Egyptian General Authority (19.5° Fajr, 17.5° Isha)
+        MAKKAH,       // Umm Al-Qura University (18.5° Fajr, Isha = 90 min after Maghrib)
+        KARACHI,      // University of Islamic Sciences, Karachi (18° Fajr, 18° Isha)
+        TEHRAN,       // Institute of Geophysics, University of Tehran (17.7° Fajr, 14° Isha)
+        JAFARI        // Shia Ithna-Ashari (16° Fajr, 14° Isha)
     }
 
     private fun getFajrAngle(method: PrayerMethod): Double = when (method) {
@@ -42,12 +42,12 @@ object SunCalc {
         PrayerMethod.JAFARI -> -16.0
     }
 
-    private fun getIshaAngle(method: PrayerMethod): Double = when (method) {
-        PrayerMethod.DEFAULT -> -18.0
+    private fun getIshaAngleOrNull(method: PrayerMethod): Double? = when (method) {
+        PrayerMethod.DEFAULT -> -17.0
         PrayerMethod.MWL -> -17.0
         PrayerMethod.ISNA -> -15.0
         PrayerMethod.EGYPTO -> -17.5
-        PrayerMethod.MAKKAH -> -18.5
+        PrayerMethod.MAKKAH -> null // Umm Al-Qura uses fixed 90 min after Maghrib
         PrayerMethod.KARACHI -> -18.0
         PrayerMethod.TEHRAN -> -14.0
         PrayerMethod.JAFARI -> -14.0
@@ -61,12 +61,31 @@ object SunCalc {
         val declination = getSolarDeclination(dayOfYear)
 
         val fajrAngle = getFajrAngle(method)
-        val ishaAngle = getIshaAngle(method)
+        val ishaAngle = getIshaAngleOrNull(method)
 
-        val fajrTime = getTimeByAngle(solarNoon, lat, declination, fajrAngle, true)
         val sunriseTime = getTimeByAngle(solarNoon, lat, declination, -0.833, true)
         val maghribTime = getTimeByAngle(solarNoon, lat, declination, -0.833, false)
-        val ishaTime = getTimeByAngle(solarNoon, lat, declination, ishaAngle, false)
+
+        var fajrTime = getTimeByAngle(solarNoon, lat, declination, fajrAngle, true)
+
+        // Isha: MAKKAH method uses fixed 90 min after Maghrib; others use angle
+        var ishaTime: Double? = if (method == PrayerMethod.MAKKAH && maghribTime != null) {
+            (maghribTime + 1.5).coerceAtMost(24.0) // 90 minutes = 1.5 hours
+        } else if (ishaAngle != null) {
+            getTimeByAngle(solarNoon, lat, declination, ishaAngle, false)
+        } else {
+            null
+        }
+
+        // Fallback for high latitudes where standard angles never occur (e.g. summer above ~48°N)
+        if (fajrTime == null && sunriseTime != null && maghribTime != null) {
+            val nightDuration = (24.0 - maghribTime) + sunriseTime
+            fajrTime = (sunriseTime - nightDuration / 3.0).coerceAtLeast(0.0)
+        }
+        if (ishaTime == null && maghribTime != null && sunriseTime != null) {
+            val nightDuration = (24.0 - maghribTime) + sunriseTime
+            ishaTime = (maghribTime + nightDuration / 3.0).coerceAtMost(24.0)
+        }
 
         // Asr calculation (Shafi'i: shadow factor = 1)
         val asrTime = getAsrTime(solarNoon, lat, declination, 1.0)
@@ -121,17 +140,16 @@ object SunCalc {
 
     private fun dateFromHoursUTC(base: Calendar, utcHours: Double?): Date? {
         if (utcHours == null) return null
-        // Create a UTC calendar from the base date
-        val cal = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"))
-        cal.set(Calendar.YEAR, base.get(Calendar.YEAR))
-        cal.set(Calendar.MONTH, base.get(Calendar.MONTH))
-        cal.set(Calendar.DAY_OF_MONTH, base.get(Calendar.DAY_OF_MONTH))
-        val h = floor(utcHours).toInt()
-        val m = floor((utcHours - h) * 60.0).toInt()
-        cal.set(Calendar.HOUR_OF_DAY, h)
-        cal.set(Calendar.MINUTE, m)
-        cal.set(Calendar.SECOND, 0)
-        cal.set(Calendar.MILLISECOND, 0)
+        val cal = Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC")).apply {
+            set(Calendar.YEAR, base.get(Calendar.YEAR))
+            set(Calendar.MONTH, base.get(Calendar.MONTH))
+            set(Calendar.DAY_OF_MONTH, base.get(Calendar.DAY_OF_MONTH))
+            set(Calendar.HOUR_OF_DAY, 0)
+            set(Calendar.MINUTE, 0)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+            timeInMillis += (utcHours * 3_600_000.0).toLong()
+        }
         return cal.time
     }
 }
