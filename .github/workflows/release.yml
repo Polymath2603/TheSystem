@@ -2,34 +2,49 @@ name: Release APK
 
 on: [push]
 
+permissions:
+  contents: write
+
 jobs:
   release:
-    if: hashFiles('.release') != ''
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check for .release marker
+        id: check
+        run: |
+          if [ -f .release ]; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+          fi
+
       - name: Set up JDK 17
+        if: steps.check.outputs.exists == 'true'
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: 17
 
       - name: Setup Gradle
+        if: steps.check.outputs.exists == 'true'
         uses: gradle/actions/setup-gradle@v4
 
       - name: Grant execute permission
+        if: steps.check.outputs.exists == 'true'
         run: chmod +x gradlew
 
       - name: Build debug APK
+        if: steps.check.outputs.exists == 'true'
         run: ./gradlew assembleDebug
 
       - name: Read version
+        if: steps.check.outputs.exists == 'true'
         id: version
         run: |
           echo "name=$(cat version.txt)-build.$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
 
       - name: Create release
+        if: steps.check.outputs.exists == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.name }}
