@@ -143,7 +143,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val cal = Calendar.getInstance()
         val lat = appData.settings.prayerLatitude
         val lng = appData.settings.prayerLongitude
-        
+
         val method = when (appData.settings.prayerAlgorithm) {
             "mwl" -> SunCalc.PrayerMethod.MWL
             "isna" -> SunCalc.PrayerMethod.ISNA
@@ -154,19 +154,52 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             "jafari" -> SunCalc.PrayerMethod.JAFARI
             else -> SunCalc.PrayerMethod.DEFAULT
         }
-        
+
         val sunTimes = SunCalc.getPrayerTimes(cal, lat, lng, method)
         val sdf = SimpleDateFormat("HH:mm", Locale.getDefault())
-        
+
+        // Fallback for Fajr: 1.5 hours before sunrise, or "18:00" if sunrise also null
+        val fajrDisplay = when {
+            sunTimes.fajr != null -> sdf.format(sunTimes.fajr)
+            sunTimes.sunrise != null -> {
+                val cal = Calendar.getInstance().apply { time = sunTimes.sunrise }
+                cal.add(Calendar.MINUTE, -90)
+                sdf.format(cal.time)
+            }
+            else -> "18:00"
+        }
+
+        // Fallback for Isha: 1.5 hours after sunset, or "19:00" if sunset also null
+        val ishaDisplay = when {
+            sunTimes.isha != null -> sdf.format(sunTimes.isha)
+            sunTimes.maghrib != null -> {
+                val cal = Calendar.getInstance().apply { time = sunTimes.maghrib }
+                cal.add(Calendar.MINUTE, 90)
+                sdf.format(cal.time)
+            }
+            else -> "19:00"
+        }
+
         val newPrayers = mutableListOf(
-            Prayer("Fajr", sunTimes.fajr?.let { sdf.format(it) } ?: "--:--", false, sunTimes.fajr),
+            Prayer("Fajr", fajrDisplay, false, sunTimes.fajr),
             Prayer("Dhuhr", sunTimes.dhuhr?.let { sdf.format(it) } ?: "--:--", false, sunTimes.dhuhr),
             Prayer("Asr", sunTimes.asr?.let { sdf.format(it) } ?: "--:--", false, sunTimes.asr),
             Prayer("Maghrib", sunTimes.maghrib?.let { sdf.format(it) } ?: "--:--", false, sunTimes.maghrib),
-            Prayer("Isha", sunTimes.isha?.let { sdf.format(it) } ?: "--:--", false, sunTimes.isha)
+            Prayer("Isha", ishaDisplay, false, sunTimes.isha)
         )
-        
+
         appData = appData.copy(prayers = newPrayers)
+        saveData()
+    }
+
+    fun updatePrayerLocation(lat: Double, lon: Double) {
+        appData = appData.copy(
+            settings = appData.settings.copy(
+                prayerLatitude = lat,
+                prayerLongitude = lon
+            )
+        )
+        calculatePrayers()
         saveData()
     }
 

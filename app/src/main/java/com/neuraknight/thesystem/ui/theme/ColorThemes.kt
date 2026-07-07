@@ -13,7 +13,7 @@ val BlueColorScheme = darkColorScheme(
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = TextPrimary
+    onSurfaceVariant = TextSecondary
 )
 
 val RedColorScheme = darkColorScheme(
@@ -26,7 +26,7 @@ val RedColorScheme = darkColorScheme(
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = TextPrimary
+    onSurfaceVariant = TextSecondary
 )
 
 val GreenColorScheme = darkColorScheme(
@@ -39,7 +39,7 @@ val GreenColorScheme = darkColorScheme(
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = TextPrimary
+    onSurfaceVariant = TextSecondary
 )
 
 val YellowColorScheme = darkColorScheme(
@@ -52,7 +52,7 @@ val YellowColorScheme = darkColorScheme(
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = TextPrimary
+    onSurfaceVariant = TextSecondary
 )
 
 val PurpleColorScheme = darkColorScheme(
@@ -65,7 +65,7 @@ val PurpleColorScheme = darkColorScheme(
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = TextPrimary
+    onSurfaceVariant = TextSecondary
 )
 
 val CyanColorScheme = darkColorScheme(
@@ -78,7 +78,7 @@ val CyanColorScheme = darkColorScheme(
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = TextPrimary
+    onSurfaceVariant = TextSecondary
 )
 
 val GreyColorScheme = darkColorScheme(
@@ -91,7 +91,7 @@ val GreyColorScheme = darkColorScheme(
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = TextPrimary
+    onSurfaceVariant = TextSecondary
 )
 
 val PinkColorScheme = darkColorScheme(
@@ -99,12 +99,12 @@ val PinkColorScheme = darkColorScheme(
     secondary = Color(0xFFFF80AB),
     background = DarkBackground,
     surface = DarkSurface,
-    onPrimary = Color.White,
+    onPrimary = Color.Black,
     onSecondary = Color.White,
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = TextPrimary
+    onSurfaceVariant = TextSecondary
 )
 
 val OrangeColorScheme = darkColorScheme(
@@ -112,12 +112,12 @@ val OrangeColorScheme = darkColorScheme(
     secondary = Color(0xFFFF9100),
     background = DarkBackground,
     surface = DarkSurface,
-    onPrimary = Color.White,
+    onPrimary = Color.Black,
     onSecondary = Color.White,
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = TextPrimary
+    onSurfaceVariant = TextSecondary
 )
 
 val TealColorScheme = darkColorScheme(
@@ -130,7 +130,7 @@ val TealColorScheme = darkColorScheme(
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = TextPrimary
+    onSurfaceVariant = TextSecondary
 )
 
 val IndigoColorScheme = darkColorScheme(
@@ -143,5 +143,5 @@ val IndigoColorScheme = darkColorScheme(
     onBackground = TextPrimary,
     onSurface = TextPrimary,
     surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = TextPrimary
+    onSurfaceVariant = TextSecondary
 )

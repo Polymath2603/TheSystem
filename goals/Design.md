@@ -1,6 +1,6 @@
 ---
 tags: [project, android, design, ui]
-status: in-progress
+status: completed
 ---
 
 # The System — Design 🎨
@@ -42,8 +42,9 @@ status: in-progress
 
 ## Settings Screen
 - Edit profile details (name, picture)
-- Change tab accent colors (7 themes)
+- Change tab accent colors (10 themes)
 - Notification preferences
+- Prayer algorithm & location settings
 
 ---
 
@@ -58,11 +59,14 @@ status: in-progress
 | 🟣 Purple | White |
 | 🩵 Cyan | White |
 | ⚫ Grey | White |
+| 🩷 Pink | White |
+| 🟠 Orange | White |
+| 🫀 Teal | White |
 
 > Themes apply **instantly** — no restart required.
 
 ---
 
 ## Links
-- [[Overview]] — project summary & concept
-- [[Backend]] — server & logic specs
+- [Overview](Overview.md) — project summary & concept
+- [Backend](Backend.md) — server & logic specs

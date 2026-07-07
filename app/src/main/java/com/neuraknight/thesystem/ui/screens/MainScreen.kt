@@ -205,12 +205,12 @@ fun UserInfoHeader(user: User) {
             Text(
                 text = "${user.characterClass} | ${user.currentTitle}",
                 style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = "🎫 PASSES: ${user.passcards}",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f)
+                color = MaterialTheme.colorScheme.primary
             )
         }
     }
@@ -238,7 +238,7 @@ fun XPBar(progress: Double, needed: Double) {
             Text(
                 text = "XP PROGRESS",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Text(
                 text = "${progress.roundToInt()} / ${needed.roundToInt()}",

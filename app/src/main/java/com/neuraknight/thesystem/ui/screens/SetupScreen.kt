@@ -36,9 +36,22 @@ fun SetupScreen(onSetupComplete: (String, String, String, Int, String, Boolean, 
     val colorOptions = listOf("blue", "red", "green", "yellow", "purple", "cyan", "grey")
     var color by remember { mutableStateOf(colorOptions[0]) }
     var gender by remember { mutableStateOf("male") }
-    var showPrayers by remember { mutableStateOf(true) }
+    var showPrayers by remember { mutableStateOf(false) }
     var showHabits by remember { mutableStateOf(true) }
     var pendingProfileImg by remember { mutableStateOf("") }
+    var useLocation by remember { mutableStateOf(false) }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            useLocation = true
+            context.getSharedPreferences("TheSystemApp", 0)
+                .edit()
+                .putBoolean("use_location", true)
+                .apply()
+        }
+    }
 
     val pickImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -90,7 +103,7 @@ fun SetupScreen(onSetupComplete: (String, String, String, Int, String, Boolean, 
             )
         }
         Spacer(modifier = Modifier.height(4.dp))
-        Text("Tap to set profile picture", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+        Text("Tap to set profile picture", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         Spacer(modifier = Modifier.height(16.dp))
 
         OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
@@ -105,6 +118,44 @@ fun SetupScreen(onSetupComplete: (String, String, String, Int, String, Boolean, 
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text("Enable Prayers", modifier = Modifier.weight(1f))
             Switch(checked = showPrayers, onCheckedChange = { showPrayers = it })
+        }
+        if (showPrayers) {
+            Spacer(modifier = Modifier.height(4.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth().padding(start = 8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (useLocation) {
+                    Text(
+                        "Location enabled",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.primary,
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp),
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                } else {
+                    Text(
+                        "Use my location for accurate prayer times?",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
+                        modifier = Modifier.weight(1f)
+                    )
+                    TextButton(
+                        onClick = {
+                            locationPermissionLauncher.launch(
+                                android.Manifest.permission.ACCESS_FINE_LOCATION
+                            )
+                        }
+                    ) {
+                        Text("Use My Location", style = MaterialTheme.typography.labelSmall)
+                    }
+                }
+            }
         }
         Spacer(modifier = Modifier.height(4.dp))
         Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -122,7 +173,7 @@ fun SetupScreen(onSetupComplete: (String, String, String, Int, String, Boolean, 
             suffix = { Text("reps") }
         )
         Spacer(modifier = Modifier.height(4.dp))
-        Text("This sets your starting level — don't guess, do a quick max set!", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+        Text("This sets your starting level — don't guess, do a quick max set!", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f))
         Spacer(modifier = Modifier.height(12.dp))
 
         DropdownSelector(label = "Goals", options = goalOptions, selected = goal, onSelected = { goal = it })

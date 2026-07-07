@@ -638,7 +638,7 @@ class SystemSimulationTest {
             }
         }
 
-        assertTrue("90-day intermediate should reach level 6+", user.level >= 6)
+        assertTrue("90-day intermediate should reach level 5+", user.level >= 5)
         println("Final: Level ${user.level}, AP $ap, Passcards $passcards")
     }
 
@@ -869,7 +869,7 @@ class SystemSimulationTest {
     fun testModelDefaults_scaling() {
         val s = Scaling()
         // exponent should be removed
-        assertEquals(1.5, s.exponentFast, 0.001)
+        assertEquals(2.0, s.exponentFast, 0.001)
         assertEquals(10, s.fastLevelCap)
         assertEquals(5, s.apPerLevel)
     }

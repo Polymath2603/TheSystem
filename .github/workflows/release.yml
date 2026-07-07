@@ -1,6 +1,8 @@
 name: Release APK
 
-on: [push]
+on:
+  push:
+    branches: [main]
 
 permissions:
   contents: write
@@ -10,12 +12,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Check for .release marker
         id: check
         run: |
           if [ -f .release ]; then
-            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "exists=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Set up JDK 17
@@ -41,13 +45,16 @@ jobs:
         if: steps.check.outputs.exists == 'true'
         id: version
         run: |
-          echo "name=$(cat version.txt)-build.$(git rev-list --count HEAD)" >> $GITHUB_OUTPUT
+          echo "name=$(cat version.txt)-build.$(git rev-list --count HEAD)" >> "$GITHUB_OUTPUT"
 
       - name: Create release
         if: steps.check.outputs.exists == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ steps.version.outputs.name }}
           name: ${{ steps.version.outputs.name }}
           files: app/build/outputs/apk/debug/app-debug.apk
           generate_release_notes: true
+          fail_on_unmatched_files: true

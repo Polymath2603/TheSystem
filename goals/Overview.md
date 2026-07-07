@@ -12,38 +12,43 @@ workplace: true
 
 ## Concept
 
-An Android app that transforms daily habits into an RPG. Complete tasks → gain XP → level up → maintain streaks. Miss tasks → lose 10% XP. Earn pass cards every 5-day streak.
+An Android app that transforms daily habits into an RPG. Complete tasks → gain XP → level up → maintain streaks. Miss tasks → lose 10% XP. Earn pass cards every 7-day streak.
 
-## Status: 🟡 In Progress
-> Found in `~/Workplace/TheSystem/` — actively developed, v1.1.0, all major UI bugs fixed.
+## Status: 🟢 Active
+
+> Found in `~/Workplace/TheSystem/` — actively developed, v1.4, all major UI bugs fixed, 44 passing tests.
 
 ### What's done ✅
-- All 7 themes working + instant apply
+- All 10 themes working + instant apply
 - Profile header on main screen (picture, name, level, rank, class, title, passcards, XP bar)
-- Exercise checkboxes fixed (infinite loop resolved)
-- Exercise generation server
-- Level-up notifications
-- Data models: history, rank, class, title, streak calendar
+- Exercise system with difficulty scaling, circular deadline countdown
+- Prayer times with 8 calculation methods (SunCalc-based, UTC-correct)
+- Streak system with passcard rewards every 7 days, AP every 30 days
+- XP progression: fast scaling (exponent 2.0) to level 10, then slow scaling
+- Settings: profile, theme, prayer algorithm, location, notifications, equipment
+- Completely offline — all data stored locally via SharedPreferences + Gson
+- 44 unit tests covering all core logic
 
 ### What's left ❌
-- Prayer module (server-side prayer times)
 - Account system (signup/login/cloud sync)
-- Push notification handler (client)
-- App packaging (WebView wrapper)
 - Social media blocker plugin
+- First-time setup flow (profile picture, gender, toggle visibility)
+
+## Source
+
+- GitHub: [Polymath2603/TheSystem](https://github.com/Polymath2603/TheSystem)
 
 ## Core Mechanic
 
 | System | Details |
 |---|---|
 | 📱 Tabs | Fitness 🔵 · Prayers 🟢 · Quests ⚪ · Profile 👤 |
-| ⭐ XP | Gained from exercises; -10% for missing tasks |
+| ⭐ XP | Gained from exercises; scaled by level |
 | 🏅 Ranks | F → D → C → B → A → S → SS → SSS |
-| 🎴 Passcards | 5-day streak → 1 card; skip a day penalty-free; expire in 30 days |
+| 🎴 Passcards | 7-day streak → 1 card; skip a day penalty-free |
 | 🕌 Prayers | Tracked separately — streak but no XP/penalty |
 
 ## Links
-- [[Design]] — UI/UX specs
-- [[Backend]] — server logic
-- [[../../Backlog]] — future feature ideas
-- [[../../02 - Earn/Business Hub]] — monetization
+
+- [Design](Design.md) — UI/UX specs
+- [Backend](Backend.md) — data models & logic

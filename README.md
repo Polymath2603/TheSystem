@@ -1,8 +1,10 @@
-# The System
+# The System 🏆
 
-[![GitHub Release](https://img.shields.io/github/v/release/user/the-system)](https://github.com/user/the-system/releases)
-[![GitHub Stars](https://img.shields.io/github/stars/user/the-system?style=social)](https://github.com/user/the-system/stargazers)
-[![GitHub Downloads](https://img.shields.io/github/downloads/user/the-system/total)](https://github.com/user/the-system/releases)
+[![GitHub Release](https://img.shields.io/github/v/release/Polymath2603/TheSystem)](https://github.com/Polymath2603/TheSystem/releases)
+[![GitHub Stars](https://img.shields.io/github/stars/Polymath2603/TheSystem?style=social)](https://github.com/Polymath2603/TheSystem/stargazers)
+[![GitHub Downloads](https://img.shields.io/github/downloads/Polymath2603/TheSystem/total)](https://github.com/Polymath2603/TheSystem/releases)
+
+**Status:** ✅ **Shipped (v1.4)** — Feature-complete. Stretch goals pending.
 
 Android gamified productivity app. Track habits, complete daily quests, and level up your character.
 

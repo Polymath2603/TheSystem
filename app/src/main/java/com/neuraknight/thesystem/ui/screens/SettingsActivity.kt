@@ -11,6 +11,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -29,6 +34,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -98,6 +104,13 @@ private fun SettingsScreen(
     var profileBitmap by remember { mutableStateOf<android.graphics.Bitmap?>(null) }
     var showWorkoutTimePicker by remember { mutableStateOf(false) }
     var showStreakTimePicker by remember { mutableStateOf(false) }
+
+    // Section expand/collapse states
+    var profileExpanded by remember { mutableStateOf(true) }
+    var notificationsExpanded by remember { mutableStateOf(true) }
+    var workoutExpanded by remember { mutableStateOf(true) }
+    var prayersExpanded by remember { mutableStateOf(true) }
+    var aboutExpanded by remember { mutableStateOf(true) }
 
     // Load initial profile image
     LaunchedEffect(Unit) {
@@ -190,7 +203,15 @@ private fun SettingsScreen(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
-            SettingsSection(title = "Profile") {
+            // =========================================================
+            // PROFILE SECTION
+            // =========================================================
+            CollapsibleSettingsSection(
+                title = "Profile",
+                icon = Icons.Default.Person,
+                expanded = profileExpanded,
+                onToggle = { profileExpanded = !profileExpanded }
+            ) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -223,92 +244,254 @@ private fun SettingsScreen(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text("Profile Picture", style = MaterialTheme.typography.bodyLarge)
-                        Text("Tap to change", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                        Text(
+                            "Tap to change",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
                         if (imageError != null) {
-                            Text(imageError!!, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.error)
+                            Text(
+                                imageError!!,
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.error
+                            )
                         }
                     }
                 }
                 Spacer(modifier = Modifier.height(12.dp))
-                OutlinedTextField(value = name, onValueChange = { name = it }, label = { Text("Name") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+                OutlinedTextField(
+                    value = name,
+                    onValueChange = { name = it },
+                    label = { Text("Name") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true
+                )
                 Spacer(modifier = Modifier.height(12.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    FilterChip(selected = gender == "male", onClick = { gender = "male" }, label = { Text("Male") }, leadingIcon = if (gender == "male") {{ Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }} else null, modifier = Modifier.weight(1f))
-                    FilterChip(selected = gender == "female", onClick = { gender = "female" }, label = { Text("Female") }, leadingIcon = if (gender == "female") {{ Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }} else null, modifier = Modifier.weight(1f))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    FilterChip(
+                        selected = gender == "male",
+                        onClick = { gender = "male" },
+                        label = { Text("Male") },
+                        leadingIcon = if (gender == "male") {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null,
+                        modifier = Modifier.weight(1f)
+                    )
+                    FilterChip(
+                        selected = gender == "female",
+                        onClick = { gender = "female" },
+                        label = { Text("Female") },
+                        leadingIcon = if (gender == "female") {
+                            { Icon(Icons.Default.Check, contentDescription = null, modifier = Modifier.size(16.dp)) }
+                        } else null,
+                        modifier = Modifier.weight(1f)
+                    )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            SettingsSection(title = "Appearance") {
-                Text("Theme Color", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
-                Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    colorOptions.forEach { (colorName, colorValue) ->
-                        val checkTint = when (colorName) {
-                            "blue", "green", "yellow", "cyan", "teal" -> Color.Black
-                            else -> Color.White
-                        }
-                        Box(modifier = Modifier.size(32.dp).clip(CircleShape).background(colorValue).border(width = if (selectedColor == colorName) 2.dp else 1.dp, color = if (selectedColor == colorName) MaterialTheme.colorScheme.onSurface else Color.Gray.copy(alpha = 0.3f), shape = CircleShape).clickable { selectedColor = colorName }, contentAlignment = Alignment.Center) {
-                            if (selectedColor == colorName) { Icon(Icons.Default.Check, contentDescription = null, tint = checkTint, modifier = Modifier.size(16.dp)) }
-                        }
-                    }
-                }
-                Spacer(modifier = Modifier.height(12.dp))
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    Text("Show Habits Tab", modifier = Modifier.weight(1f))
-                    Switch(checked = showHabits, onCheckedChange = { showHabits = it })
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            SettingsSection(title = "Prayer Times") {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            // =========================================================
+            // NOTIFICATIONS SECTION
+            // =========================================================
+            CollapsibleSettingsSection(
+                title = "Notifications",
+                icon = Icons.Default.Notifications,
+                expanded = notificationsExpanded,
+                onToggle = { notificationsExpanded = !notificationsExpanded }
+            ) {
+                // Master toggle
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Show Prayers Tab", style = MaterialTheme.typography.bodyLarge)
-                        Text("Fajr, Dhuhr, Asr, Maghrib, Isha tracking", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                        Text("Enable Notifications", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "Workout, prayer, and streak alerts",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
                     }
-                    Switch(checked = showPrayers, onCheckedChange = { showPrayers = it })
+                    Switch(checked = notificationsEnabled, onCheckedChange = { enabled ->
+                        if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                            if (ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.POST_NOTIFICATIONS
+                                ) != PackageManager.PERMISSION_GRANTED
+                            ) {
+                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+                            }
+                        }
+                        notificationsEnabled = enabled
+                    })
                 }
-                if (showPrayers) {
+
+                if (notificationsEnabled) {
                     Spacer(modifier = Modifier.height(12.dp))
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(12.dp))
-                    var expanded by remember { mutableStateOf(false) }
-                    ExposedDropdownMenuBox(expanded = expanded, onExpandedChange = { expanded = !expanded }) {
-                        OutlinedTextField(value = algorithmOptions.find { it.first == prayerAlgorithm }?.second ?: "Default", onValueChange = {}, readOnly = true, label = { Text("Calculation Method") }, trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) }, modifier = Modifier.fillMaxWidth().menuAnchor())
-                        ExposedDropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
-                            algorithmOptions.forEach { (value, label) ->
-                                DropdownMenuItem(text = { Text(label) }, onClick = { prayerAlgorithm = value; expanded = false })
-                            }
+
+                    // Workout Reminder
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Workout Reminder", style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                "Daily quest notification",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
                         }
-                    }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        OutlinedTextField(value = prayerLatitude, onValueChange = { prayerLatitude = it }, label = { Text("Latitude") }, modifier = Modifier.weight(1f), singleLine = true)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        OutlinedTextField(value = prayerLongitude, onValueChange = { prayerLongitude = it }, label = { Text("Longitude") }, modifier = Modifier.weight(1f), singleLine = true)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        LocationButton(
-                            onLocation = { lat, lng ->
-                                prayerLatitude = lat.toString()
-                                prayerLongitude = lng.toString()
-                            },
-                            onError = { imageError = it }
+                        Switch(
+                            checked = workoutReminderEnabled,
+                            onCheckedChange = { workoutReminderEnabled = it }
                         )
                     }
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text("Use your current location coordinates for accurate prayer times.", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                    if (workoutReminderEnabled) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showWorkoutTimePicker = true }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Schedule,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Reminder Time", modifier = Modifier.weight(1f))
+                            Text(
+                                "${workoutReminderHour.toString().padStart(2, '0')}:${workoutReminderMinute.toString().padStart(2, '0')}",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+
+                    // Prayer Alerts (only if prayers are shown)
+                    if (showPrayers) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        HorizontalDivider()
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Column(modifier = Modifier.weight(1f)) {
+                                Text("Prayer Alerts", style = MaterialTheme.typography.bodyLarge)
+                                Text(
+                                    "Notify before each prayer",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                                )
+                            }
+                            Switch(
+                                checked = prayerNotificationsEnabled,
+                                onCheckedChange = { prayerNotificationsEnabled = it }
+                            )
+                        }
+                        if (prayerNotificationsEnabled) {
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text("Lead Time", modifier = Modifier.weight(1f))
+                                Text(
+                                    "${prayerNotificationLeadMinutes} min",
+                                    color = MaterialTheme.colorScheme.primary,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                            Slider(
+                                value = prayerNotificationLeadMinutes.toFloat(),
+                                onValueChange = { prayerNotificationLeadMinutes = it.toInt() },
+                                valueRange = 0f..30f,
+                                steps = 5,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                        }
+                    }
+
+                    // Streak Warning
+                    Spacer(modifier = Modifier.height(12.dp))
+                    HorizontalDivider()
+                    Spacer(modifier = Modifier.height(12.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text("Streak Warning", style = MaterialTheme.typography.bodyLarge)
+                            Text(
+                                "Evening reminder if streak at risk",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            )
+                        }
+                        Switch(
+                            checked = streakWarningEnabled,
+                            onCheckedChange = { streakWarningEnabled = it }
+                        )
+                    }
+                    if (streakWarningEnabled) {
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showStreakTimePicker = true }
+                                .padding(vertical = 4.dp),
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Schedule,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.primary,
+                                modifier = Modifier.size(20.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text("Warning Time", modifier = Modifier.weight(1f))
+                            Text(
+                                "${streakWarningHour.toString().padStart(2, '0')}:${streakWarningMinute.toString().padStart(2, '0')}",
+                                color = MaterialTheme.colorScheme.primary,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            SettingsSection(title = "Training") {
-                Text("Workout Days", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+            // =========================================================
+            // WORKOUT SECTION
+            // =========================================================
+            CollapsibleSettingsSection(
+                title = "Workout",
+                icon = Icons.Default.Star,
+                expanded = workoutExpanded,
+                onToggle = { workoutExpanded = !workoutExpanded }
+            ) {
+                Text(
+                    "Workout Days",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     dayLabels.forEach { (label, dayNum) ->
                         FilterChip(
                             selected = workoutDays.contains(dayNum),
@@ -324,162 +507,260 @@ private fun SettingsScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Training Goals (muscle focus)", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                Text(
+                    "Training Goals (muscle focus)",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                FlowRow(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     goalOptions.forEach { goal ->
-                        FilterChip(selected = selectedGoals.contains(goal), onClick = {
-                            selectedGoals = if (selectedGoals.contains(goal)) selectedGoals.toMutableList().apply { remove(goal) } else selectedGoals.toMutableList().apply { add(goal) }
-                        }, label = { Text(goal.replaceFirstChar { it.uppercase() }) })
+                        FilterChip(
+                            selected = selectedGoals.contains(goal),
+                            onClick = {
+                                selectedGoals = if (selectedGoals.contains(goal))
+                                    selectedGoals.toMutableList().apply { remove(goal) }
+                                else
+                                    selectedGoals.toMutableList().apply { add(goal) }
+                            },
+                            label = { Text(goal.replaceFirstChar { it.uppercase() }) }
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.height(16.dp))
-                Text("Equipment Available", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f))
+                Text(
+                    "Equipment Available",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                )
                 Spacer(modifier = Modifier.height(8.dp))
-                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     equipmentOptions.forEach { equipment ->
-                        FilterChip(selected = selectedEquipment.contains(equipment), onClick = {
-                            selectedEquipment = if (selectedEquipment.contains(equipment)) selectedEquipment.toMutableList().apply { remove(equipment) } else selectedEquipment.toMutableList().apply { add(equipment) }
-                        }, label = { Text(equipment.replaceFirstChar { it.uppercase() }) })
+                        FilterChip(
+                            selected = selectedEquipment.contains(equipment),
+                            onClick = {
+                                selectedEquipment = if (selectedEquipment.contains(equipment))
+                                    selectedEquipment.toMutableList().apply { remove(equipment) }
+                                else
+                                    selectedEquipment.toMutableList().apply { add(equipment) }
+                            },
+                            label = { Text(equipment.replaceFirstChar { it.uppercase() }) }
+                        )
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
-            SettingsSection(title = "Notifications") {
-                Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
+            // =========================================================
+            // PRAYERS SECTION
+            // =========================================================
+            CollapsibleSettingsSection(
+                title = "Prayers",
+                icon = Icons.Default.Place,
+                expanded = prayersExpanded,
+                onToggle = { prayersExpanded = !prayersExpanded }
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Enable Notifications", style = MaterialTheme.typography.bodyLarge)
-                        Text("Workout, prayer, and streak alerts", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                        Text("Show Prayers Tab", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "Fajr, Dhuhr, Asr, Maghrib, Isha tracking",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
                     }
-                    Switch(checked = notificationsEnabled, onCheckedChange = { enabled ->
-                        if (enabled && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
-                                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                            }
-                        }
-                        notificationsEnabled = enabled
-                    })
+                    Switch(checked = showPrayers, onCheckedChange = { showPrayers = it })
                 }
-                if (notificationsEnabled) {
+                if (showPrayers) {
                     Spacer(modifier = Modifier.height(12.dp))
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(12.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Workout Reminder", style = MaterialTheme.typography.bodyLarge)
-                            Text("Daily quest notification", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
-                        }
-                        Switch(checked = workoutReminderEnabled, onCheckedChange = { workoutReminderEnabled = it })
-                    }
-                    if (workoutReminderEnabled) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(modifier = Modifier.fillMaxWidth().clickable { showWorkoutTimePicker = true }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Schedule, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Reminder Time", modifier = Modifier.weight(1f))
-                            Text("${workoutReminderHour.toString().padStart(2, '0')}:${workoutReminderMinute.toString().padStart(2, '0')}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                        }
-                    }
-                    if (showPrayers) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        HorizontalDivider()
-                        Spacer(modifier = Modifier.height(12.dp))
-                        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                            Column(modifier = Modifier.weight(1f)) {
-                                Text("Prayer Alerts", style = MaterialTheme.typography.bodyLarge)
-                                Text("Notify before each prayer", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
+                    var expanded by remember { mutableStateOf(false) }
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = !expanded }
+                    ) {
+                        OutlinedTextField(
+                            value = algorithmOptions.find { it.first == prayerAlgorithm }?.second ?: "Default",
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Calculation Method") },
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                        )
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            algorithmOptions.forEach { (value, label) ->
+                                DropdownMenuItem(
+                                    text = { Text(label) },
+                                    onClick = { prayerAlgorithm = value; expanded = false }
+                                )
                             }
-                            Switch(checked = prayerNotificationsEnabled, onCheckedChange = { prayerNotificationsEnabled = it })
-                        }
-                        if (prayerNotificationsEnabled) {
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                                Text("Lead Time", modifier = Modifier.weight(1f))
-                                Text("${prayerNotificationLeadMinutes} min", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                            }
-                            Slider(value = prayerNotificationLeadMinutes.toFloat(), onValueChange = { prayerNotificationLeadMinutes = it.toInt() }, valueRange = 0f..30f, steps = 5, modifier = Modifier.fillMaxWidth())
                         }
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                    HorizontalDivider()
-                    Spacer(modifier = Modifier.height(12.dp))
-                    Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text("Streak Warning", style = MaterialTheme.typography.bodyLarge)
-                            Text("Evening reminder if streak at risk", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f))
-                        }
-                        Switch(checked = streakWarningEnabled, onCheckedChange = { streakWarningEnabled = it })
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        OutlinedTextField(
+                            value = prayerLatitude,
+                            onValueChange = { prayerLatitude = it },
+                            label = { Text("Latitude") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        OutlinedTextField(
+                            value = prayerLongitude,
+                            onValueChange = { prayerLongitude = it },
+                            label = { Text("Longitude") },
+                            modifier = Modifier.weight(1f),
+                            singleLine = true
+                        )
+                        Spacer(modifier = Modifier.width(4.dp))
+                        LocationButton(
+                            onLocation = { lat, lng ->
+                                prayerLatitude = lat.toString()
+                                prayerLongitude = lng.toString()
+                            },
+                            onError = { imageError = it }
+                        )
                     }
-                    if (streakWarningEnabled) {
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Row(modifier = Modifier.fillMaxWidth().clickable { showStreakTimePicker = true }.padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.Schedule, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text("Warning Time", modifier = Modifier.weight(1f))
-                            Text("${streakWarningHour.toString().padStart(2, '0')}:${streakWarningMinute.toString().padStart(2, '0')}", color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold)
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        "Use your current location coordinates for accurate prayer times.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                    )
                 }
             }
 
-            if (showWorkoutTimePicker) {
-                val timePickerState = rememberTimePickerState(initialHour = workoutReminderHour, initialMinute = workoutReminderMinute)
-                AlertDialog(
-                    onDismissRequest = { showWorkoutTimePicker = false },
-                    confirmButton = { TextButton(onClick = { workoutReminderHour = timePickerState.hour; workoutReminderMinute = timePickerState.minute; showWorkoutTimePicker = false }) { Text("OK") } },
-                    dismissButton = { TextButton(onClick = { showWorkoutTimePicker = false }) { Text("Cancel") } },
-                    text = { TimePicker(state = timePickerState) }
-                )
-            }
+            Spacer(modifier = Modifier.height(12.dp))
 
-            if (showStreakTimePicker) {
-                val timePickerState = rememberTimePickerState(initialHour = streakWarningHour, initialMinute = streakWarningMinute)
-                AlertDialog(
-                    onDismissRequest = { showStreakTimePicker = false },
-                    confirmButton = { TextButton(onClick = { streakWarningHour = timePickerState.hour; streakWarningMinute = timePickerState.minute; showStreakTimePicker = false }) { Text("OK") } },
-                    dismissButton = { TextButton(onClick = { showStreakTimePicker = false }) { Text("Cancel") } },
-                    text = { TimePicker(state = timePickerState) }
+            // =========================================================
+            // ABOUT SECTION
+            // =========================================================
+            CollapsibleSettingsSection(
+                title = "About",
+                icon = Icons.Default.Info,
+                expanded = aboutExpanded,
+                onToggle = { aboutExpanded = !aboutExpanded }
+            ) {
+                Text(
+                    "Theme Color",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    colorOptions.forEach { (colorName, colorValue) ->
+                        val checkTint = when (colorName) {
+                            "blue", "green", "yellow", "cyan", "teal" -> Color.Black
+                            else -> Color.White
+                        }
+                        Box(
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape)
+                                .background(colorValue)
+                                .border(
+                                    width = if (selectedColor == colorName) 2.dp else 1.dp,
+                                    color = if (selectedColor == colorName) MaterialTheme.colorScheme.onSurface else Color.Gray.copy(alpha = 0.3f),
+                                    shape = CircleShape
+                                )
+                                .clickable { selectedColor = colorName },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            if (selectedColor == colorName) {
+                                Icon(
+                                    Icons.Default.Check,
+                                    contentDescription = null,
+                                    tint = checkTint,
+                                    modifier = Modifier.size(16.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text("Show Habits Tab", style = MaterialTheme.typography.bodyLarge)
+                        Text(
+                            "Toggle the habits tracking tab visibility",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                        )
+                    }
+                    Switch(checked = showHabits, onCheckedChange = { showHabits = it })
+                }
             }
 
             Spacer(modifier = Modifier.height(24.dp))
 
+            // =========================================================
+            // SAVE BUTTON
+            // =========================================================
             val currentProfilePath = pendingProfileImg ?: initialData.user.profileImg
 
-            Button(onClick = {
-                val lat = prayerLatitude.toDoubleOrNull() ?: initialData.settings.prayerLatitude
-                val lng = prayerLongitude.toDoubleOrNull() ?: initialData.settings.prayerLongitude
-                val updated = initialData.copy(
-                    user = initialData.user.copy(
-                        name = name.ifEmpty { "Unknown" },
-                        gender = gender,
-                        profileImg = currentProfilePath
-                    ),
-                    settings = Settings(
-                        color = selectedColor,
-                        prayerAlgorithm = prayerAlgorithm,
-                        workoutDays = workoutDays,
-                        trainingGoals = selectedGoals,
-                        equipmentTypes = selectedEquipment,
-                        showPrayers = showPrayers,
-                        showHabits = showHabits,
-                        prayerLatitude = lat,
-                        prayerLongitude = lng,
-                        notificationsEnabled = notificationsEnabled,
-                        workoutReminderEnabled = workoutReminderEnabled,
-                        workoutReminderHour = workoutReminderHour,
-                        workoutReminderMinute = workoutReminderMinute,
-                        prayerNotificationsEnabled = prayerNotificationsEnabled,
-                        prayerNotificationLeadMinutes = prayerNotificationLeadMinutes,
-                        streakWarningEnabled = streakWarningEnabled,
-                        streakWarningHour = streakWarningHour,
-                        streakWarningMinute = streakWarningMinute
+            Button(
+                onClick = {
+                    val lat = prayerLatitude.toDoubleOrNull() ?: initialData.settings.prayerLatitude
+                    val lng = prayerLongitude.toDoubleOrNull() ?: initialData.settings.prayerLongitude
+                    val updated = initialData.copy(
+                        user = initialData.user.copy(
+                            name = name.ifEmpty { "Unknown" },
+                            gender = gender,
+                            profileImg = currentProfilePath
+                        ),
+                        settings = Settings(
+                            color = selectedColor,
+                            prayerAlgorithm = prayerAlgorithm,
+                            workoutDays = workoutDays,
+                            trainingGoals = selectedGoals,
+                            equipmentTypes = selectedEquipment,
+                            showPrayers = showPrayers,
+                            showHabits = showHabits,
+                            prayerLatitude = lat,
+                            prayerLongitude = lng,
+                            notificationsEnabled = notificationsEnabled,
+                            workoutReminderEnabled = workoutReminderEnabled,
+                            workoutReminderHour = workoutReminderHour,
+                            workoutReminderMinute = workoutReminderMinute,
+                            prayerNotificationsEnabled = prayerNotificationsEnabled,
+                            prayerNotificationLeadMinutes = prayerNotificationLeadMinutes,
+                            streakWarningEnabled = streakWarningEnabled,
+                            streakWarningHour = streakWarningHour,
+                            streakWarningMinute = streakWarningMinute
+                        )
                     )
-                )
-                onSave(updated)
-            }, modifier = Modifier.fillMaxWidth(), shape = RoundedCornerShape(12.dp)) {
+                    onSave(updated)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
                 Icon(Icons.Default.Save, contentDescription = null)
                 Spacer(modifier = Modifier.width(8.dp))
                 Text("Save Settings", fontWeight = FontWeight.Bold)
@@ -488,10 +769,58 @@ private fun SettingsScreen(
             Spacer(modifier = Modifier.height(32.dp))
         }
     }
+
+    // =========================================================
+    // TIME PICKER DIALOGS
+    // =========================================================
+    if (showWorkoutTimePicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = workoutReminderHour,
+            initialMinute = workoutReminderMinute
+        )
+        AlertDialog(
+            onDismissRequest = { showWorkoutTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    workoutReminderHour = timePickerState.hour
+                    workoutReminderMinute = timePickerState.minute
+                    showWorkoutTimePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showWorkoutTimePicker = false }) { Text("Cancel") }
+            },
+            text = { TimePicker(state = timePickerState) }
+        )
+    }
+
+    if (showStreakTimePicker) {
+        val timePickerState = rememberTimePickerState(
+            initialHour = streakWarningHour,
+            initialMinute = streakWarningMinute
+        )
+        AlertDialog(
+            onDismissRequest = { showStreakTimePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    streakWarningHour = timePickerState.hour
+                    streakWarningMinute = timePickerState.minute
+                    showStreakTimePicker = false
+                }) { Text("OK") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showStreakTimePicker = false }) { Text("Cancel") }
+            },
+            text = { TimePicker(state = timePickerState) }
+        )
+    }
 }
 
 @Composable
-private fun LocationButton(onLocation: (Double, Double) -> Unit, onError: (String) -> Unit) {
+private fun LocationButton(
+    onLocation: (Double, Double) -> Unit,
+    onError: (String) -> Unit
+) {
     val context = LocalContext.current
 
     val permissionLauncher = rememberLauncherForActivityResult(
@@ -507,25 +836,48 @@ private fun LocationButton(onLocation: (Double, Double) -> Unit, onError: (Strin
     IconButton(
         onClick = {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                val fineGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_FINE_LOCATION)
-                val coarseGranted = ContextCompat.checkSelfPermission(context, Manifest.permission.ACCESS_COARSE_LOCATION)
-                if (fineGranted == PackageManager.PERMISSION_GRANTED || coarseGranted == PackageManager.PERMISSION_GRANTED) {
+                val fineGranted = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_FINE_LOCATION
+                )
+                val coarseGranted = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                )
+                if (fineGranted == PackageManager.PERMISSION_GRANTED ||
+                    coarseGranted == PackageManager.PERMISSION_GRANTED
+                ) {
                     fetchLocation(context, onLocation, onError)
                 } else {
-                    permissionLauncher.launch(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION, Manifest.permission.ACCESS_COARSE_LOCATION))
+                    permissionLauncher.launch(
+                        arrayOf(
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_COARSE_LOCATION
+                        )
+                    )
                 }
             } else {
                 fetchLocation(context, onLocation, onError)
             }
         }
     ) {
-        Icon(Icons.Default.MyLocation, contentDescription = "Fetch location", tint = MaterialTheme.colorScheme.primary)
+        Icon(
+            Icons.Default.MyLocation,
+            contentDescription = "Fetch location",
+            tint = MaterialTheme.colorScheme.primary
+        )
     }
 }
 
-private fun fetchLocation(context: android.content.Context, onLocation: (Double, Double) -> Unit, onError: (String) -> Unit) {
+private fun fetchLocation(
+    context: android.content.Context,
+    onLocation: (Double, Double) -> Unit,
+    onError: (String) -> Unit
+) {
     try {
-        val locationManager = context.getSystemService(android.content.Context.LOCATION_SERVICE) as LocationManager
+        val locationManager = context.getSystemService(
+            android.content.Context.LOCATION_SERVICE
+        ) as LocationManager
         val providers = locationManager.getProviders(true)
         var location: android.location.Location? = null
         for (provider in providers) {
@@ -543,11 +895,73 @@ private fun fetchLocation(context: android.content.Context, onLocation: (Double,
 }
 
 @Composable
-fun SettingsSection(title: String, content: @Composable ColumnScope.() -> Unit) {
-    Column {
-        Text(text = title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary, fontWeight = FontWeight.Bold, modifier = Modifier.padding(bottom = 8.dp))
-        Card(modifier = Modifier.fillMaxWidth(), colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)), shape = RoundedCornerShape(12.dp)) {
-            Column(modifier = Modifier.padding(12.dp)) { content() }
+private fun CollapsibleSettingsSection(
+    title: String,
+    icon: ImageVector,
+    expanded: Boolean,
+    onToggle: () -> Unit,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column {
+            // Section header row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .clickable(onClick = onToggle)
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.size(22.dp)
+                )
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.weight(1f)
+                )
+                Icon(
+                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                    contentDescription = if (expanded) "Collapse section" else "Expand section",
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
+                    modifier = Modifier.size(24.dp)
+                )
+            }
+
+            // Content area with animation
+            AnimatedVisibility(
+                visible = expanded,
+                enter = fadeIn() + expandVertically(expandFrom = Alignment.Top),
+                exit = fadeOut() + shrinkVertically(shrinkTowards = Alignment.Top)
+            ) {
+                Column {
+                    HorizontalDivider(
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f)
+                    )
+                    Column(
+                        modifier = Modifier.padding(
+                            start = 16.dp,
+                            end = 16.dp,
+                            top = 12.dp,
+                            bottom = 16.dp
+                        )
+                    ) {
+                        content()
+                    }
+                }
+            }
         }
     }
 }

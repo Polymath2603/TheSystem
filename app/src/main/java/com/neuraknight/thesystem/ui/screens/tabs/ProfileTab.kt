@@ -141,10 +141,10 @@ fun ProfileTab(viewModel: MainViewModel) {
                         Text(
                             text = "[${user.rank}]",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    
+
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     Row(
@@ -177,7 +177,7 @@ fun ProfileTab(viewModel: MainViewModel) {
                         Text(
                             text = "EXPERIENCE",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         Text(
                             text = "${user.totalXp.roundToInt()} XP",
@@ -199,7 +199,7 @@ fun ProfileTab(viewModel: MainViewModel) {
                     Text(
                         text = "${user.xpProgress.roundToInt()} / ${user.xpNeeded.roundToInt()} to next level",
                         style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -304,7 +304,7 @@ fun StatChip(icon: androidx.compose.ui.graphics.vector.ImageVector, label: Strin
         Text(
             text = subLabel,
             style = MaterialTheme.typography.labelSmall,
-            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+            color = MaterialTheme.colorScheme.onSurfaceVariant
         )
     }
 }
@@ -434,7 +434,7 @@ fun LineChartCard(title: String, data: List<Double>) {
                 ) {
                     Text(
                         text = "No data",
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -522,7 +522,7 @@ fun MultiLineChartCard(
                         Text(
                             text = label,
                             style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }

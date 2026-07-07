@@ -117,7 +117,7 @@ fun HabitsTab(viewModel: MainViewModel) {
             key = { idx, (origIdx, _) -> "habit_${origIdx}" }
         ) { _, (actualIndex, habit) ->
             val borderColor = if (habit.done) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-            val bgColor = if (habit.done) MaterialTheme.colorScheme.primary.copy(alpha = 0.05f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            val bgColor = if (habit.done) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
 
             Row(
                 modifier = Modifier

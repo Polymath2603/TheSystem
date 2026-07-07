@@ -4,8 +4,8 @@ import androidx.compose.ui.graphics.Color
 
 // Core Palette
 val DarkBackground = Color(0xFF020408)
-val DarkSurface = Color(0xFF0A0F1A)
-val DarkSurfaceVariant = Color(0xFF141B2D)
+val DarkSurface = Color(0xFF0E1422)
+val DarkSurfaceVariant = Color(0xFF1C2440)
 
 // System Colors (Solo Leveling inspired)
 val SystemBlueElectric = Color(0xFF00E5FF)

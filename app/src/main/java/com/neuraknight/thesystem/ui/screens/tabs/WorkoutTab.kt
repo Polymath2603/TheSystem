@@ -58,10 +58,7 @@ fun WorkoutTab(viewModel: MainViewModel) {
                     name = exercise.name,
                     amount = exercise.amount,
                     isDone = exercise.done,
-                    isTimed = exercise.timed,
-                    onToggle = { viewModel.toggleQuestExercise(index, it) },
-                    onStartTimer = { viewModel.startTimedExercise(index) },
-                    onSkipTimer = { viewModel.skipTimedExercise(index) }
+                    onToggle = { viewModel.toggleQuestExercise(index, it) }
                 )
                 Spacer(modifier = Modifier.height(12.dp))
             }
@@ -82,10 +79,7 @@ fun WorkoutTab(viewModel: MainViewModel) {
                             name = exercise.name,
                             amount = exercise.amount,
                             isDone = exercise.done,
-                            isTimed = exercise.timed,
-                            onToggle = { viewModel.toggleExtraExercise(index, it) },
-                            onStartTimer = { viewModel.startExtraTimedExercise(index) },
-                            onSkipTimer = { viewModel.skipExtraTimedExercise(index) }
+                            onToggle = { viewModel.toggleExtraExercise(index, it) }
                         )
                         Spacer(modifier = Modifier.height(12.dp))
                     }
@@ -150,7 +144,7 @@ fun WorkoutTab(viewModel: MainViewModel) {
                         Text(
                             text = "Rest and recover!",
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -237,7 +231,7 @@ fun DeadlineCountdown(
                         Text(
                             text = "COMPLETE",
                             style = MaterialTheme.typography.labelSmall,
-                            color = onSurfaceColor.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     } else {
                         Text(
@@ -249,7 +243,7 @@ fun DeadlineCountdown(
                         Text(
                             text = "REMAINING",
                             style = MaterialTheme.typography.labelSmall,
-                            color = onSurfaceColor.copy(alpha = 0.6f)
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -327,15 +321,10 @@ fun ExerciseCard(
     name: String,
     amount: Int,
     isDone: Boolean,
-    isTimed: Boolean,
-    onToggle: (Boolean) -> Unit,
-    onStartTimer: () -> Unit,
-    onSkipTimer: () -> Unit
+    onToggle: (Boolean) -> Unit
 ) {
     val borderColor = if (isDone) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline.copy(alpha = 0.3f)
-    val bgColor = if (isDone) MaterialTheme.colorScheme.primary.copy(alpha = 0.05f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-
-    var lastClickTime by remember { mutableStateOf(0L) }
+    val bgColor = if (isDone) MaterialTheme.colorScheme.primary.copy(alpha = 0.08f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
 
     Row(
         modifier = Modifier
@@ -353,59 +342,19 @@ fun ExerciseCard(
                 color = if (isDone) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
             )
             Text(
-                text = if (isTimed) "DURATION: ${formatDuration(amount)}" else "GOAL: $amount REPS",
+                text = "$amount REPS",
                 style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
+                color = MaterialTheme.colorScheme.onSurfaceVariant
             )
         }
 
-        if (isTimed) {
-            Button(
-                onClick = {
-                    val currentTime = System.currentTimeMillis()
-                    if (currentTime - lastClickTime < 300) {
-                        onSkipTimer()
-                    } else {
-                        if (!isDone) onStartTimer()
-                    }
-                    lastClickTime = currentTime
-                },
-                enabled = !isDone,
-                shape = RoundedCornerShape(4.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = MaterialTheme.colorScheme.primary,
-                    disabledContainerColor = MaterialTheme.colorScheme.surfaceVariant
-                )
-            ) {
-                Text(
-                    text = if (isDone) "DONE" else formatDurationBtn(amount),
-                    style = MaterialTheme.typography.labelSmall,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        } else {
-            Checkbox(
-                checked = isDone,
-                onCheckedChange = onToggle,
-                colors = CheckboxDefaults.colors(
-                    checkedColor = MaterialTheme.colorScheme.primary,
-                    uncheckedColor = MaterialTheme.colorScheme.outline
-                )
+        Checkbox(
+            checked = isDone,
+            onCheckedChange = onToggle,
+            colors = CheckboxDefaults.colors(
+                checkedColor = MaterialTheme.colorScheme.primary,
+                uncheckedColor = MaterialTheme.colorScheme.outline
             )
-        }
+        )
     }
-}
-
-fun formatDuration(seconds: Int): String {
-    val hours = seconds / 3600
-    val minutes = (seconds % 3600) / 60
-    val secs = seconds % 60
-    return if (hours > 0) "${hours}h ${minutes}m ${secs}s" else if (minutes > 0) "${minutes}m ${secs}s" else "${secs}s"
-}
-
-fun formatDurationBtn(seconds: Int): String {
-    val hours = seconds / 3600
-    val minutes = (seconds % 3600) / 60
-    val secs = seconds % 60
-    return if (hours > 0) "${hours}h${minutes}m" else if (minutes > 0) "${minutes}m${secs}s" else "${secs}s"
 }
