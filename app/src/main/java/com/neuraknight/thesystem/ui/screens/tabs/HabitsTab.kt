@@ -34,7 +34,7 @@ fun HabitsTab(viewModel: MainViewModel) {
         indexedHabits.sortedBy { it.second.done }
     }
     
-    // Long press dialog state
+    // Long press state
     var showLongPressDialog by remember { mutableStateOf(false) }
     var selectedHabitIndex by remember { mutableStateOf(-1) }
     var selectedHabitName by remember { mutableStateOf("") }

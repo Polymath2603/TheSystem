@@ -63,7 +63,7 @@ fun WorkoutTab(viewModel: MainViewModel) {
                 Spacer(modifier = Modifier.height(12.dp))
             }
 
-            // Extra exercises only if main completed
+            // Extra exercises when main is completed
             if (quest.completed) {
                 if (quest.extraExercises.isNotEmpty()) {
                     item {
@@ -84,7 +84,7 @@ fun WorkoutTab(viewModel: MainViewModel) {
                         Spacer(modifier = Modifier.height(12.dp))
                     }
                 }
-                // Show "Get More" button if extras are all done (or empty) and sets remain
+                // "Get More" button
                 if (quest.extraSetsRemaining > 0 && (quest.extraExercises.isEmpty() || quest.extraExercises.all { it.done })) {
                     item {
                         OutlinedButton(
@@ -115,7 +115,7 @@ fun WorkoutTab(viewModel: MainViewModel) {
         }
 
         if (quest.usedPasscard) {
-            // Passcard used - show rest day message
+            // Passcard used
             item {
                 Surface(
                     color = MaterialTheme.colorScheme.secondary.copy(alpha = 0.1f),

@@ -105,14 +105,12 @@ private fun SettingsScreen(
     var showWorkoutTimePicker by remember { mutableStateOf(false) }
     var showStreakTimePicker by remember { mutableStateOf(false) }
 
-    // Section expand/collapse states
     var profileExpanded by remember { mutableStateOf(true) }
     var notificationsExpanded by remember { mutableStateOf(true) }
     var workoutExpanded by remember { mutableStateOf(true) }
     var prayersExpanded by remember { mutableStateOf(true) }
     var aboutExpanded by remember { mutableStateOf(true) }
 
-    // Load initial profile image
     LaunchedEffect(Unit) {
         val path = initialData.user.profileImg
         if (path.isNotEmpty() && File(path).exists()) {
@@ -126,7 +124,6 @@ private fun SettingsScreen(
         if (!isGranted) notificationsEnabled = false
     }
 
-    // Image picker – after picking, launch crop
     val cropImageLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
     ) { uri: Uri? ->
@@ -203,9 +200,6 @@ private fun SettingsScreen(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
-            // =========================================================
-            // PROFILE SECTION
-            // =========================================================
             CollapsibleSettingsSection(
                 title = "Profile",
                 icon = Icons.Default.Person,
@@ -294,16 +288,13 @@ private fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // =========================================================
-            // NOTIFICATIONS SECTION
-            // =========================================================
             CollapsibleSettingsSection(
                 title = "Notifications",
                 icon = Icons.Default.Notifications,
                 expanded = notificationsExpanded,
                 onToggle = { notificationsExpanded = !notificationsExpanded }
             ) {
-                // Master toggle
+                // Master notification toggle
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -335,7 +326,7 @@ private fun SettingsScreen(
                     HorizontalDivider()
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    // Workout Reminder
+                    // Workout reminder
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
@@ -473,9 +464,6 @@ private fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // =========================================================
-            // WORKOUT SECTION
-            // =========================================================
             CollapsibleSettingsSection(
                 title = "Workout",
                 icon = Icons.Default.Star,
@@ -559,9 +547,6 @@ private fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // =========================================================
-            // PRAYERS SECTION
-            // =========================================================
             CollapsibleSettingsSection(
                 title = "Prayers",
                 icon = Icons.Default.Place,
@@ -653,9 +638,6 @@ private fun SettingsScreen(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // =========================================================
-            // ABOUT SECTION
-            // =========================================================
             CollapsibleSettingsSection(
                 title = "About",
                 icon = Icons.Default.Info,

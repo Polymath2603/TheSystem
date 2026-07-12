@@ -142,7 +142,6 @@ private fun LocationPromptContent(
             verticalArrangement = Arrangement.Center
         ) {
             item {
-                // System header
                 Surface(
                     color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
                     shape = RoundedCornerShape(4.dp),
@@ -165,7 +164,7 @@ private fun LocationPromptContent(
 
                 Spacer(modifier = Modifier.height(40.dp))
 
-                // Location request card
+                // Location card
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(16.dp),

@@ -57,7 +57,6 @@ fun ProfileTab(viewModel: MainViewModel) {
             .padding(top = 16.dp),
         contentPadding = PaddingValues(bottom = 24.dp)
     ) {
-        // Profile Header
         item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -72,7 +71,6 @@ fun ProfileTab(viewModel: MainViewModel) {
                         .padding(20.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Avatar
                     Box(
                         modifier = Modifier
                             .size(80.dp)
@@ -158,10 +156,9 @@ fun ProfileTab(viewModel: MainViewModel) {
                 }
             }
             Spacer(modifier = Modifier.height(20.dp))
-        }
+            }
 
-        // XP Progress
-        item {
+            item {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -206,7 +203,6 @@ fun ProfileTab(viewModel: MainViewModel) {
             Spacer(modifier = Modifier.height(20.dp))
         }
 
-        // Stats Section
         item {
             Text(
                 text = "ATTRIBUTES",
@@ -259,7 +255,6 @@ fun ProfileTab(viewModel: MainViewModel) {
             Spacer(modifier = Modifier.height(24.dp))
         }
 
-        // Settings Button
         item {
             Button(
                 onClick = {
@@ -279,7 +274,6 @@ fun ProfileTab(viewModel: MainViewModel) {
             }
         }
 
-        // Progress Section
         item {
             Spacer(modifier = Modifier.height(24.dp))
             ProgressSection(history = viewModel.appData.history)
